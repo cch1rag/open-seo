@@ -31,6 +31,7 @@ import {
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 import openSeoFactSheet from "@/server/features/onboarding/openseo-fact-sheet.md?raw";
+import { toSamToolError } from "./samToolErrors";
 
 // SAM reads more of a site than the onboarding preview: enough pages to work
 // out what a business does, sells, and positions against on its own.
@@ -41,6 +42,7 @@ const SAM_MAX_MAPPED_URLS = 60;
 // the exact same definitions the MCP server registers, so the in-app agent and
 // the MCP server can never drift in what a tool does or how it bills.
 type McpToolDefinition<Shape extends ZodRawShape> = {
+  name: string;
   config: { description: string; inputSchema: Shape };
   handler: (
     args: z.infer<z.ZodObject<Shape>>,
@@ -81,6 +83,7 @@ function adaptMcpTool<Shape extends ZodRawShape>(
   return tool({
     description: def.config.description,
     inputSchema: z.object(bindsProject ? modelShape : def.config.inputSchema),
+    needsApproval: def.name === "save_keywords",
     execute: async (args) => {
       // Reconstruct the handler's validated arg shape by injecting the session
       // projectId that we stripped from the model-facing schema above.
@@ -98,9 +101,7 @@ function adaptMcpTool<Shape extends ZodRawShape>(
       } catch (error) {
         // Surface the failure to the model so it can recover or report it,
         // rather than aborting the whole turn on one bad tool call.
-        return {
-          error: error instanceof Error ? error.message : String(error),
-        };
+        return toSamToolError(error);
       }
     },
   });
@@ -182,13 +183,14 @@ function scrapeTools(projectDomain: string | null): ToolSet {
 export function buildSamMcpTools(
   authContext: McpToolAuthContext,
   project: { id: string; domain: string | null },
+  getAbortSignal?: () => AbortSignal | undefined,
 ): ToolSet {
   const projectId = project.id;
+  const fallbackAbortSignal = new AbortController().signal;
   const extra: ToolExtra = {
-    // Placeholder to satisfy ToolExtra — no tool handler or the DataForSEO
-    // client reads this signal (true on the real MCP route too), so aborting a
-    // turn does not cancel in-flight tool requests.
-    signal: new AbortController().signal,
+    get signal() {
+      return getAbortSignal?.() ?? fallbackAbortSignal;
+    },
     requestId: 0,
     authInfo: {
       token: "sam-session",
