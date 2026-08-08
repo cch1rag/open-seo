@@ -8,7 +8,7 @@ type SamAccess = {
   // Only true once the setup check has resolved to "no access". It stays false
   // while the check is in flight, so the chat renders immediately instead of
   // blocking behind a skeleton — the gate only replaces it if we confirm the
-  // OpenRouter key is missing.
+  // AI provider configuration is incomplete or unavailable.
   showSetupGate: boolean;
   provider: "openrouter" | "openai-compatible" | null;
   errorMessage: string | null;
@@ -17,7 +17,7 @@ type SamAccess = {
 };
 
 export function useSamAccess(projectId: string): SamAccess {
-  // Hosted deployments always have OPENROUTER_API_KEY provisioned (the server
+  // Hosted deployments use the managed AI provider configuration (the server
   // function short-circuits to enabled), so skip the round-trip entirely.
   const isHosted = isHostedClientAuthMode();
 
@@ -44,7 +44,7 @@ export function useSamAccess(projectId: string): SamAccess {
   }
 
   // Optimistic: only gate once the check has actually resolved (success or
-  // error) and it says the key isn't there.
+  // error) and it says the AI provider configuration is unavailable.
   const resolved = data !== undefined || error != null;
   return {
     showSetupGate: resolved && !(data?.enabled ?? false),

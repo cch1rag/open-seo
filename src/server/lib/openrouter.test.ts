@@ -16,6 +16,7 @@ describe("resolveChatAgentConfiguration", () => {
     });
 
     expect(model.specificationVersion).toBe("v3");
+    expect(model.provider).toBe("openai-compatible.chat");
   });
 
   it("keeps OpenRouter as the default provider", () => {
@@ -106,35 +107,37 @@ describe("getChatAgentSetupStatus", () => {
   });
 
   it("reports the missing compatible provider value without exposing configuration", () => {
-    expect(
-      getChatAgentSetupStatus({
-        AUTH_MODE: "local_noauth",
-        AI_PROVIDER: "openai-compatible",
-        AI_API_KEY: "provider-key",
-        AI_BASE_URL: "https://example.test/openai/v1",
-      }),
-    ).toMatchObject({
+    const status = getChatAgentSetupStatus({
+      AUTH_MODE: "local_noauth",
+      AI_PROVIDER: "openai-compatible",
+      AI_API_KEY: "provider-key",
+      AI_BASE_URL: "https://example.test/openai/v1",
+    });
+
+    expect(status).toMatchObject({
       enabled: false,
       provider: "openai-compatible",
-      errorMessage: expect.stringContaining("AI_MODEL"),
     });
+    expect(status.errorMessage).toContain("AI_MODEL");
   });
 
   it("retains the default OpenRouter provider when its key is missing", () => {
-    expect(getChatAgentSetupStatus({})).toMatchObject({
+    const status = getChatAgentSetupStatus({});
+
+    expect(status).toMatchObject({
       enabled: false,
       provider: "openrouter",
-      errorMessage: expect.stringContaining("OPENROUTER_API_KEY"),
     });
+    expect(status.errorMessage).toContain("OPENROUTER_API_KEY");
   });
 
   it("does not identify an unsupported provider", () => {
-    expect(
-      getChatAgentSetupStatus({ AI_PROVIDER: "unknown-provider" }),
-    ).toMatchObject({
+    const status = getChatAgentSetupStatus({ AI_PROVIDER: "unknown-provider" });
+
+    expect(status).toMatchObject({
       enabled: false,
       provider: null,
-      errorMessage: expect.stringContaining("Unsupported AI_PROVIDER"),
     });
+    expect(status.errorMessage).toContain("Unsupported AI_PROVIDER");
   });
 });

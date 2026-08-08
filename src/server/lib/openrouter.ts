@@ -71,12 +71,11 @@ export function getChatAgentSetupStatus(
   } catch (error) {
     return {
       enabled: false,
-      provider:
-        !env.AI_PROVIDER
-          ? "openrouter"
-          : env.AI_PROVIDER === "openai-compatible"
-            ? "openai-compatible"
-            : null,
+      provider: !env.AI_PROVIDER
+        ? "openrouter"
+        : env.AI_PROVIDER === "openai-compatible"
+          ? "openai-compatible"
+          : null,
       errorMessage:
         error instanceof Error
           ? error.message
