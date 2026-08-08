@@ -1,3 +1,8 @@
+# Git publishing safety
+
+- This repository is a private fork. Never push to `upstream` (`https://github.com/every-app/open-seo.git`).
+- Any user-authorized push must target `origin` (`https://github.com/cch1rag/open-seo.git`) only.
+
 # Agent guidance
 
 ## Engineering principles

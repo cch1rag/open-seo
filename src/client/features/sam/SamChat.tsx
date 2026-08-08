@@ -56,9 +56,9 @@ export function SamChat({
     goToSession(firstSessionId);
   }, [activeSessionId, firstSessionId, goToSession]);
 
-  // SAM cannot answer a turn without OPENROUTER_API_KEY, so surface setup
+  // SAM cannot answer a turn without a configured provider, so surface setup
   // instructions instead of letting a chat fail mid-stream. Only shown once the
-  // check confirms the key is missing (self-hosted) — never as a blocking
+  // self-hosted check confirms setup is incomplete — never as a blocking
   // skeleton while the check is in flight.
   if (access.showSetupGate) {
     return (
@@ -68,6 +68,7 @@ export function SamChat({
             errorMessage={access.errorMessage}
             isRefetching={access.isRefetching}
             onRetry={access.onRetry}
+            provider={access.provider}
           />
         </div>
       </div>

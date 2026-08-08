@@ -33,7 +33,29 @@ Optional env values:
 - `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
-- `OPENROUTER_API_KEY` (required for AI features such as SAM; see [OpenRouter](https://openrouter.ai/settings/keys))
+
+## AI providers
+
+OpenRouter is the default provider path for AI features such as SAM. Set
+`OPENROUTER_API_KEY` in `.env` (see [OpenRouter](https://openrouter.ai/settings/keys));
+you may also set `OPENROUTER_MODEL` when you need a specific model.
+
+As an alternative, local Docker self-hosting can use an OpenAI-compatible
+provider. Set these variables together in `.env`, and use this path instead of
+the OpenRouter variables:
+
+```env
+AI_PROVIDER=openai-compatible
+AI_API_KEY=replace-with-your-provider-api-key
+AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4.1-mini
+```
+
+For Azure AI Foundry, use the resource or project OpenAI-v1 endpoint ending in
+`/openai/v1`, and set `AI_MODEL` to the deployment name. Compatible mode must
+run with `AUTH_MODE=local_noauth` through Docker self-hosting only; alternate
+providers are not supported for hosted OpenSEO deployments. The configured
+model must support streaming chat and tool/function calling for SAM.
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 
