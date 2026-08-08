@@ -20,6 +20,33 @@ describe("runSelfhostPreflight", () => {
     expect(itemFor(result, "DATAFORSEO_API_KEY")?.level).toBe("ok");
   });
 
+  it("accepts a complete compatible AI provider in local_noauth mode", () => {
+    const result = runSelfhostPreflight({
+      AUTH_MODE: "local_noauth",
+      AI_PROVIDER: "openai-compatible",
+      AI_API_KEY: "provider-key",
+      AI_BASE_URL: "https://example.test/openai/v1",
+      AI_MODEL: "deployment-name",
+    });
+
+    expect(itemFor(result, "AI features")?.level).toBe("ok");
+    expect(itemFor(result, "AI features")?.message).toContain(
+      "openai-compatible",
+    );
+  });
+
+  it("warns when a compatible AI provider is missing AI_MODEL", () => {
+    const result = runSelfhostPreflight({
+      AUTH_MODE: "local_noauth",
+      AI_PROVIDER: "openai-compatible",
+      AI_API_KEY: "provider-key",
+      AI_BASE_URL: "https://example.test/openai/v1",
+    });
+
+    expect(itemFor(result, "AI features")?.level).toBe("warn");
+    expect(itemFor(result, "AI features")?.message).toContain("AI_MODEL");
+  });
+
   it("fails an invalid AUTH_MODE with the valid list", () => {
     const result = runSelfhostPreflight({ AUTH_MODE: "local-noauth" });
 

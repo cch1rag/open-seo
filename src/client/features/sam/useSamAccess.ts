@@ -10,6 +10,7 @@ type SamAccess = {
   // blocking behind a skeleton — the gate only replaces it if we confirm the
   // OpenRouter key is missing.
   showSetupGate: boolean;
+  provider: "openrouter" | "openai-compatible" | null;
   errorMessage: string | null;
   isRefetching: boolean;
   onRetry: () => void;
@@ -35,6 +36,7 @@ export function useSamAccess(projectId: string): SamAccess {
   if (isHosted) {
     return {
       showSetupGate: false,
+      provider: "openrouter",
       errorMessage: null,
       isRefetching: false,
       onRetry,
@@ -46,6 +48,7 @@ export function useSamAccess(projectId: string): SamAccess {
   const resolved = data !== undefined || error != null;
   return {
     showSetupGate: resolved && !(data?.enabled ?? false),
+    provider: data?.provider ?? null,
     errorMessage:
       data?.errorMessage ??
       (error

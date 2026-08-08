@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getChatAgentModelSync,
+  getChatAgentSetupStatus,
   resolveChatAgentConfiguration,
 } from "./openrouter";
 
@@ -84,5 +85,56 @@ describe("resolveChatAgentConfiguration", () => {
     expect(() => resolveChatAgentConfiguration({})).toThrow(
       "OPENROUTER_API_KEY",
     );
+  });
+});
+
+describe("getChatAgentSetupStatus", () => {
+  it("reports a complete compatible provider in local_noauth mode", () => {
+    expect(
+      getChatAgentSetupStatus({
+        AUTH_MODE: "local_noauth",
+        AI_PROVIDER: "openai-compatible",
+        AI_API_KEY: "provider-key",
+        AI_BASE_URL: "https://example.test/openai/v1",
+        AI_MODEL: "deployment-name",
+      }),
+    ).toEqual({
+      enabled: true,
+      provider: "openai-compatible",
+      errorMessage: null,
+    });
+  });
+
+  it("reports the missing compatible provider value without exposing configuration", () => {
+    expect(
+      getChatAgentSetupStatus({
+        AUTH_MODE: "local_noauth",
+        AI_PROVIDER: "openai-compatible",
+        AI_API_KEY: "provider-key",
+        AI_BASE_URL: "https://example.test/openai/v1",
+      }),
+    ).toMatchObject({
+      enabled: false,
+      provider: "openai-compatible",
+      errorMessage: expect.stringContaining("AI_MODEL"),
+    });
+  });
+
+  it("retains the default OpenRouter provider when its key is missing", () => {
+    expect(getChatAgentSetupStatus({})).toMatchObject({
+      enabled: false,
+      provider: "openrouter",
+      errorMessage: expect.stringContaining("OPENROUTER_API_KEY"),
+    });
+  });
+
+  it("does not identify an unsupported provider", () => {
+    expect(
+      getChatAgentSetupStatus({ AI_PROVIDER: "unknown-provider" }),
+    ).toMatchObject({
+      enabled: false,
+      provider: null,
+      errorMessage: expect.stringContaining("Unsupported AI_PROVIDER"),
+    });
   });
 });

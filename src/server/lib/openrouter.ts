@@ -18,6 +18,12 @@ export type ChatAgentConfiguration =
       modelId: string;
     };
 
+export type ChatAgentSetupStatus = {
+  enabled: boolean;
+  provider: ChatAgentConfiguration["provider"] | null;
+  errorMessage: string | null;
+};
+
 export function resolveChatAgentConfiguration(
   env: Record<string, string | undefined>,
 ): ChatAgentConfiguration {
@@ -50,6 +56,33 @@ export function resolveChatAgentConfiguration(
     baseUrl: getRequiredConfigurationValue(env, "AI_BASE_URL"),
     modelId: getRequiredConfigurationValue(env, "AI_MODEL"),
   };
+}
+
+export function getChatAgentSetupStatus(
+  env: Record<string, string | undefined>,
+): ChatAgentSetupStatus {
+  try {
+    const configuration = resolveChatAgentConfiguration(env);
+    return {
+      enabled: true,
+      provider: configuration.provider,
+      errorMessage: null,
+    };
+  } catch (error) {
+    return {
+      enabled: false,
+      provider:
+        !env.AI_PROVIDER
+          ? "openrouter"
+          : env.AI_PROVIDER === "openai-compatible"
+            ? "openai-compatible"
+            : null,
+      errorMessage:
+        error instanceof Error
+          ? error.message
+          : "AI provider configuration is invalid.",
+    };
+  }
 }
 
 /**

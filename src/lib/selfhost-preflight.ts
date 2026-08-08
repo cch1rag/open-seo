@@ -1,4 +1,5 @@
 import { AUTH_MODES } from "@/lib/auth-mode";
+import { getChatAgentSetupStatus } from "@/server/lib/openrouter";
 import {
   looksLikeDataForSeoKey,
   MIN_BETTER_AUTH_SECRET_LENGTH,
@@ -195,21 +196,34 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
     });
   }
 
+  const chatAgentStatus = getChatAgentSetupStatus(env);
   items.push(
-    get(env, "OPENROUTER_API_KEY")
+    chatAgentStatus.enabled
       ? {
           key: "ai",
           name: "AI features",
           level: "ok",
-          message: "OPENROUTER_API_KEY set",
-        }
-      : {
-          key: "ai",
-          name: "AI features",
-          level: "info",
           message:
-            "OPENROUTER_API_KEY not set (optional) — SAM, the in-app SEO agent, is disabled.",
-        },
+            chatAgentStatus.provider === "openrouter"
+              ? "OPENROUTER_API_KEY set"
+              : "openai-compatible provider configured",
+        }
+      : env.AI_PROVIDER
+        ? {
+            key: "ai",
+            name: "AI features",
+            level: "warn",
+            message:
+              chatAgentStatus.errorMessage ??
+              "AI provider configuration is invalid.",
+          }
+        : {
+            key: "ai",
+            name: "AI features",
+            level: "info",
+            message:
+              "OPENROUTER_API_KEY not set (optional) — SAM, the in-app SEO agent, is disabled.",
+          },
   );
 }
 
