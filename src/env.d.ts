@@ -44,6 +44,12 @@ declare namespace Cloudflare {
     OPENROUTER_API_KEY?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).
     OPENROUTER_MODEL?: string;
+
+    // Self-hosted OpenAI-compatible provider settings (local_noauth only).
+    AI_PROVIDER?: "openai-compatible";
+    AI_API_KEY?: string;
+    AI_BASE_URL?: string;
+    AI_MODEL?: string;
   }
 }
 

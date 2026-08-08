@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { resolveChatAgentConfiguration } from "./openrouter";
+import {
+  getChatAgentModelSync,
+  resolveChatAgentConfiguration,
+} from "./openrouter";
 
 describe("resolveChatAgentConfiguration", () => {
+  it("builds a compatible model for the SAM Durable Object", () => {
+    const model = getChatAgentModelSync({
+      AUTH_MODE: "local_noauth",
+      AI_PROVIDER: "openai-compatible",
+      AI_API_KEY: "provider-key",
+      AI_BASE_URL: "https://example.test/openai/v1",
+      AI_MODEL: "deployment-name",
+    });
+
+    expect(model.specificationVersion).toBe("v3");
+  });
+
   it("keeps OpenRouter as the default provider", () => {
     expect(
       resolveChatAgentConfiguration({ OPENROUTER_API_KEY: "router-key" }),

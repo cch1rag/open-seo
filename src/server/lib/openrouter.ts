@@ -81,9 +81,7 @@ export async function getChatAgentModel(): Promise<LanguageModelV3> {
   );
 }
 
-export function getChatAgentModelSync(
-  env: Record<string, string | undefined>,
-): LanguageModelV3 {
+export function getChatAgentModelSync(env: object): LanguageModelV3 {
   return buildChatAgentModelFromConfiguration(
     resolveChatAgentConfiguration({
       AUTH_MODE: getEnvValueSync(env, "AUTH_MODE"),
