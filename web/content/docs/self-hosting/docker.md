@@ -1,15 +1,14 @@
 ---
 title: "Docker Self-Hosting"
-description: "Run OpenSEO locally with Docker Compose using the published GHCR image."
+description: "Run OpenSEO locally with Docker Compose using a local build by default."
 ---
 
 Run OpenSEO locally with Docker.
 
 In Docker mode, OpenSEO uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`). Only expose it behind your own auth-protected reverse proxy, tunnel, or private network. For internet-facing self-hosting, use [Cloudflare](/docs/self-hosting/cloudflare) instead.
 
-The default `compose.yaml` uses the published GHCR image:
-
-- `ghcr.io/every-app/open-seo:latest`
+The default `compose.yaml` builds this checkout as `open-seo:local` whenever
+you run `docker compose up`, so it never pulls the upstream image.
 
 ## Prerequisites
 
@@ -39,7 +38,8 @@ Optional env values:
 - `PORT` (defaults to `3001`)
 - `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
 - `AUTH_MODE=local_noauth` (already set in compose)
-- `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
+- `OPEN_SEO_IMAGE` (defaults to `open-seo:local`)
+- `OPEN_SEO_PULL_POLICY` (defaults to `build`)
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 
@@ -55,22 +55,15 @@ OpenSEO collects anonymized telemetry for core usage events: heartbeats with agg
 
 To disable it, set `OPENSEO_TELEMETRY_DISABLED=1` (or `DO_NOT_TRACK=1`) in `.env`, then run `docker compose up -d --force-recreate open-seo`.
 
-## Pin to a specific image tag
+## Run a prebuilt private image
 
-Set `OPEN_SEO_IMAGE` in `.env` and restart:
+To use a private Docker Hub or registry image instead of building this
+checkout, set both values in `.env` and restart:
 
 ```bash
-OPEN_SEO_IMAGE=ghcr.io/every-app/open-seo:v1.2.3
+OPEN_SEO_IMAGE=your-registry/open-seo:v1.2.3
+OPEN_SEO_PULL_POLICY=missing
 docker compose up -d
-```
-
-## Build your own image locally
-
-If you are testing local code changes, build and run a local tag:
-
-```bash
-docker build -f Dockerfile.selfhost -t open-seo:local .
-OPEN_SEO_IMAGE=open-seo:local docker compose up -d
 ```
 
 ## Common commands
@@ -81,7 +74,7 @@ Restart service after env changes:
 docker compose up -d open-seo
 ```
 
-Pull latest published image and restart:
+Pull a configured prebuilt image and restart:
 
 ```bash
 docker compose pull && docker compose up -d

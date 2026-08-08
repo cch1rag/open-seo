@@ -1,6 +1,13 @@
 services:
   open-seo:
-    image: ${OPEN_SEO_IMAGE:-ghcr.io/every-app/open-seo:latest}
+    # Build this checkout by default so `docker compose up` never pulls the
+    # upstream image. Set OPEN_SEO_IMAGE and OPEN_SEO_PULL_POLICY=missing to
+    # run a prebuilt image from a private registry instead.
+    image: ${OPEN_SEO_IMAGE:-open-seo:local}
+    build:
+      context: .
+      dockerfile: Dockerfile.selfhost
+    pull_policy: ${OPEN_SEO_PULL_POLICY:-build}
     restart: unless-stopped
     # Forward EVERY .env value into the container, including OPENROUTER_* and
     # AI_* provider values. The explicit `environment:`
