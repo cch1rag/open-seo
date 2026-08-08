@@ -73,6 +73,7 @@
     }
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.63",
     "@ai-sdk/react": "^3.0.211",
     "@cloudflare/ai-chat": "^0.8.4",
     "@cloudflare/think": "0.12.1",

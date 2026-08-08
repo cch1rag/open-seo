@@ -2,14 +2,55 @@ import {
   createOpenRouter,
   type LanguageModelV3,
 } from "@openrouter/ai-sdk-provider";
-import {
-  getOptionalEnvValue,
-  getRequiredEnvValue,
-} from "@/server/lib/runtime-env";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { getEnvValueSync, getOptionalEnvValue } from "@/server/lib/runtime-env";
 
 // OpenRouter model slug used for the in-app chat agents (onboarding + SAM).
 // Override with OPENROUTER_MODEL to swap models without a code change.
 const DEFAULT_CHAT_AGENT_MODEL = "minimax/minimax-m3";
+
+export type ChatAgentConfiguration =
+  | { provider: "openrouter"; apiKey: string; modelId?: string }
+  | {
+      provider: "openai-compatible";
+      apiKey: string;
+      baseUrl: string;
+      modelId: string;
+    };
+
+export function resolveChatAgentConfiguration(
+  env: Record<string, string | undefined>,
+): ChatAgentConfiguration {
+  const provider = env.AI_PROVIDER;
+
+  if (!provider) {
+    const apiKey = getRequiredConfigurationValue(env, "OPENROUTER_API_KEY");
+    return {
+      provider: "openrouter",
+      apiKey,
+      modelId: env.OPENROUTER_MODEL,
+    };
+  }
+
+  if (provider !== "openai-compatible") {
+    throw new Error(
+      "Unsupported AI_PROVIDER. Accepted provider: openai-compatible.",
+    );
+  }
+
+  if (env.AUTH_MODE !== "local_noauth") {
+    throw new Error(
+      "AI_PROVIDER=openai-compatible is only supported when AUTH_MODE=local_noauth.",
+    );
+  }
+
+  return {
+    provider: "openai-compatible",
+    apiKey: getRequiredConfigurationValue(env, "AI_API_KEY"),
+    baseUrl: getRequiredConfigurationValue(env, "AI_BASE_URL"),
+    modelId: getRequiredConfigurationValue(env, "AI_MODEL"),
+  };
+}
 
 /**
  * Returns the AI SDK LanguageModel for the chat agents. `usage: { include: true }`
@@ -34,9 +75,26 @@ const DEFAULT_CHAT_AGENT_MODEL = "minimax/minimax-m3";
  * is configured.
  */
 export async function getChatAgentModel(): Promise<LanguageModelV3> {
-  const apiKey = await getRequiredEnvValue("OPENROUTER_API_KEY");
-  const modelId = await getOptionalEnvValue("OPENROUTER_MODEL");
-  return buildChatAgentModel(apiKey, modelId);
+  const env = await getChatAgentEnvironment();
+  return buildChatAgentModelFromConfiguration(
+    resolveChatAgentConfiguration(env),
+  );
+}
+
+export function getChatAgentModelSync(
+  env: Record<string, string | undefined>,
+): LanguageModelV3 {
+  return buildChatAgentModelFromConfiguration(
+    resolveChatAgentConfiguration({
+      AUTH_MODE: getEnvValueSync(env, "AUTH_MODE"),
+      OPENROUTER_API_KEY: getEnvValueSync(env, "OPENROUTER_API_KEY"),
+      OPENROUTER_MODEL: getEnvValueSync(env, "OPENROUTER_MODEL"),
+      AI_PROVIDER: getEnvValueSync(env, "AI_PROVIDER"),
+      AI_API_KEY: getEnvValueSync(env, "AI_API_KEY"),
+      AI_BASE_URL: getEnvValueSync(env, "AI_BASE_URL"),
+      AI_MODEL: getEnvValueSync(env, "AI_MODEL"),
+    }),
+  );
 }
 
 /**
@@ -45,6 +103,73 @@ export async function getChatAgentModel(): Promise<LanguageModelV3> {
  * key/model from its DO env and builds the model here.
  */
 export function buildChatAgentModel(
+  apiKey: string,
+  modelId?: string,
+): LanguageModelV3 {
+  return buildOpenRouterChatAgentModel(apiKey, modelId);
+}
+
+async function getChatAgentEnvironment(): Promise<
+  Record<string, string | undefined>
+> {
+  const [
+    authMode,
+    openRouterApiKey,
+    openRouterModel,
+    aiProvider,
+    aiApiKey,
+    aiBaseUrl,
+    aiModel,
+  ] = await Promise.all([
+    getOptionalEnvValue("AUTH_MODE"),
+    getOptionalEnvValue("OPENROUTER_API_KEY"),
+    getOptionalEnvValue("OPENROUTER_MODEL"),
+    getOptionalEnvValue("AI_PROVIDER"),
+    getOptionalEnvValue("AI_API_KEY"),
+    getOptionalEnvValue("AI_BASE_URL"),
+    getOptionalEnvValue("AI_MODEL"),
+  ]);
+
+  return {
+    AUTH_MODE: authMode,
+    OPENROUTER_API_KEY: openRouterApiKey,
+    OPENROUTER_MODEL: openRouterModel,
+    AI_PROVIDER: aiProvider,
+    AI_API_KEY: aiApiKey,
+    AI_BASE_URL: aiBaseUrl,
+    AI_MODEL: aiModel,
+  };
+}
+
+function getRequiredConfigurationValue(
+  env: Record<string, string | undefined>,
+  name: string,
+): string {
+  const value = env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+function buildChatAgentModelFromConfiguration(
+  configuration: ChatAgentConfiguration,
+): LanguageModelV3 {
+  if (configuration.provider === "openai-compatible") {
+    return createOpenAICompatible({
+      name: "openai-compatible",
+      apiKey: configuration.apiKey,
+      baseURL: configuration.baseUrl,
+    })(configuration.modelId);
+  }
+
+  return buildOpenRouterChatAgentModel(
+    configuration.apiKey,
+    configuration.modelId,
+  );
+}
+
+function buildOpenRouterChatAgentModel(
   apiKey: string,
   modelId?: string,
 ): LanguageModelV3 {
