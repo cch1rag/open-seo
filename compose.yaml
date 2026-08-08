@@ -2,7 +2,8 @@ services:
   open-seo:
     image: ${OPEN_SEO_IMAGE:-ghcr.io/every-app/open-seo:latest}
     restart: unless-stopped
-    # Forward EVERY .env value into the container. The explicit `environment:`
+    # Forward EVERY .env value into the container, including OPENROUTER_* and
+    # AI_* provider values. The explicit `environment:`
     # list below still wins for the values it names — without this, any .env
     # value not listed there (e.g. OPENROUTER_API_KEY) silently never reached
     # the app. Compose errors if .env is missing; the quickstart's
