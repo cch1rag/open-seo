@@ -10,6 +10,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { Markdown } from "@/client/components/Markdown";
+import { getPendingToolApprovalId } from "./toolApproval";
 
 // Shared rendering for the chat agents (onboarding + SAM). The chats differ
 // only in which tools are available and how tool names become labels
@@ -167,10 +168,14 @@ function ToolBadge({
   part,
   live,
   resolveToolLabel,
+  approvalId,
+  onToolApproval,
 }: {
   part: UIMessage["parts"][number];
   live: boolean;
   resolveToolLabel: ResolveToolLabel;
+  approvalId: string | null;
+  onToolApproval?: (approvalId: string, approved: boolean) => void;
 }) {
   const labels = resolveToolLabel(part.type);
   if (!labels) return null;
@@ -194,6 +199,24 @@ function ToolBadge({
         <Check className="size-3" />
       )}
       <span>{isRunning ? `${labels.running}…` : labels.done}</span>
+      {approvalId && onToolApproval ? (
+        <span className="ml-1 inline-flex gap-1">
+          <button
+            type="button"
+            className="btn btn-primary btn-xs"
+            onClick={() => onToolApproval(approvalId, true)}
+          >
+            Approve
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs"
+            onClick={() => onToolApproval(approvalId, false)}
+          >
+            Reject
+          </button>
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -215,6 +238,7 @@ export function ChatMessage({
   streaming,
   onUndo,
   onEdit,
+  onToolApproval,
 }: {
   message: UIMessage;
   resolveToolLabel: ResolveToolLabel;
@@ -223,6 +247,7 @@ export function ChatMessage({
   streaming?: boolean;
   onUndo?: () => void;
   onEdit?: (newText: string) => void;
+  onToolApproval?: (approvalId: string, approved: boolean) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -323,6 +348,8 @@ export function ChatMessage({
                 part={part}
                 live={Boolean(streaming)}
                 resolveToolLabel={resolveToolLabel}
+                approvalId={getPendingToolApprovalId(part)}
+                onToolApproval={onToolApproval}
               />
             );
           }

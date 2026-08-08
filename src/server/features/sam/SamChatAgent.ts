@@ -3,6 +3,7 @@ import type {
   ChatResponseResult,
   Session,
   StepContext,
+  ToolCallContext,
   TurnConfig,
   TurnContext,
 } from "@cloudflare/think";
@@ -18,6 +19,8 @@ import { SamProjectMemoryRepository } from "@/server/features/sam/SamProjectMemo
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { buildSamMcpTools } from "@/server/features/sam/samChatTools";
 import { buildSamSystemPrompt } from "@/server/features/sam/samSystemPrompt";
+import { getSamActiveToolNames } from "@/server/features/sam/samToolAccess";
+import { SamToolPolicy } from "@/server/features/sam/samToolPolicy";
 import { getChatAgentModelSync } from "@/server/lib/openrouter";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
@@ -34,6 +37,10 @@ const MEMORY_BLOCK = "memory";
 const RESEARCH_LOG_BLOCK = "research_log";
 
 const PUBLIC_ORIGIN_KEY = "sam-public-origin";
+const SAM_MAX_TOOL_CALLS = 16;
+const SAM_MAX_PAID_TOOL_CALLS = 6;
+const SAM_MAX_STEPS = 24;
+const SAM_MAX_OUTPUT_TOKENS = 4000;
 
 // Derive a short session title from the first user message.
 function deriveTitle(text: string): string {
@@ -91,6 +98,11 @@ export class SamChatAgent extends Think {
   // meters the spend.
   private turnCostUsd = 0;
   private turnMonthlyRemaining: number | null = null;
+  private turnAbortSignal: AbortSignal | undefined;
+  private turnToolPolicy = new SamToolPolicy({
+    maxCalls: SAM_MAX_TOOL_CALLS,
+    maxPaidCalls: SAM_MAX_PAID_TOOL_CALLS,
+  });
 
   // Record the app origin for the deep links tools attach to responses,
   // derived from the requests this DO serves instead of env config. DO storage
@@ -209,9 +221,14 @@ export class SamChatAgent extends Think {
     };
   }
 
-  async beforeTurn(_ctx: TurnContext): Promise<TurnConfig> {
+  async beforeTurn(turnContext: TurnContext): Promise<TurnConfig> {
     this.turnCostUsd = 0;
     this.turnMonthlyRemaining = null;
+    this.turnAbortSignal = undefined;
+    this.turnToolPolicy = new SamToolPolicy({
+      maxCalls: SAM_MAX_TOOL_CALLS,
+      maxPaidCalls: SAM_MAX_PAID_TOOL_CALLS,
+    });
     return withPgClient(async (): Promise<TurnConfig> => {
       const ctx = await this.loadSamContext();
       if (!ctx) {
@@ -253,19 +270,32 @@ export class SamChatAgent extends Think {
         scopes: [MCP_SCOPE],
       });
 
-      return {
-        tools: buildSamMcpTools(authContext, {
+      const samTools = buildSamMcpTools(
+        authContext,
+        {
           id: ctx.project.id,
           domain: ctx.project.domain,
-        }),
-        // SAM is meant to run complex multi-step work in one turn (site-read
-        // intake plus a full research chain, multi-competitor sweeps), so give
-        // it generous headroom — cost is bounded by per-step metering and the
-        // model stopping on its own, not by this cap.
-        maxSteps: 48,
-        maxOutputTokens: 6000,
+        },
+        () => this.turnAbortSignal,
+      );
+
+      return {
+        tools: samTools,
+        activeTools: getSamActiveToolNames({ ...turnContext.tools, ...samTools }),
+        maxSteps: SAM_MAX_STEPS,
+        maxOutputTokens: SAM_MAX_OUTPUT_TOKENS,
       };
     });
+  }
+
+  beforeToolCall(ctx: ToolCallContext) {
+    this.turnAbortSignal = ctx.abortSignal;
+    if (ctx.abortSignal?.aborted) {
+      return { action: "block" as const, reason: "SAM was cancelled." };
+    }
+
+    const block = this.turnToolPolicy.allow(ctx.toolName);
+    return block ? { action: "block" as const, reason: block.reason } : undefined;
   }
 
   onStepFinish(ctx: StepContext): void {
@@ -289,7 +319,10 @@ export class SamChatAgent extends Think {
           creditFeature: "agent",
           costUsd: this.turnCostUsd,
           monthlyRemaining: this.turnMonthlyRemaining,
-          properties: { provider: "openrouter" },
+          properties: {
+            provider: "openrouter",
+            ...this.turnToolPolicy.summary(),
+          },
         });
       }
 

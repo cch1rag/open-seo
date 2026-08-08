@@ -29,8 +29,14 @@ export function SamConversation({
   // session id. The WebSocket is authorized in the Worker (src/server.ts) before
   // it reaches the DO; billing gates come back as normal assistant messages.
   const agent = useAgent({ agent: "sam-chat", name: sessionId });
-  const { messages, sendMessage, setMessages, clearHistory, status } =
-    useAgentChat({ agent });
+  const {
+    messages,
+    sendMessage,
+    setMessages,
+    clearHistory,
+    status,
+    addToolApprovalResponse,
+  } = useAgentChat({ agent });
 
   const isBusy = status === "submitted" || status === "streaming";
   const sendText = (text: string) => void sendMessage({ text });
@@ -137,6 +143,9 @@ export function SamConversation({
                 message.role === "user"
                   ? (newText) => void editAndResend(message.id, newText)
                   : undefined
+              }
+              onToolApproval={(id, approved) =>
+                void addToolApprovalResponse({ id, approved })
               }
             />
           ))}
