@@ -5,18 +5,22 @@ import { getTableConfig as getSqliteTableConfig } from "drizzle-orm/sqlite-core"
 import { getTableConfig as getPgTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import * as sqliteApp from "./app.schema";
+import * as sqliteProjectContext from "./project-context.schema";
+import * as sqliteAudit from "./audit.schema";
 import * as sqliteSam from "./sam.schema";
 import * as sqliteAuth from "./better-auth-schema";
 import * as sqliteBilling from "./billing.schema";
+import * as sqliteGa4 from "./ga4.schema";
 import * as sqliteGsc from "./gsc.schema";
-import * as sqliteReddit from "./reddit-attribution.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
 import * as pgApp from "./pg/app.schema";
+import * as pgProjectContext from "./pg/project-context.schema";
+import * as pgAudit from "./pg/audit.schema";
 import * as pgSam from "./pg/sam.schema";
 import * as pgAuth from "./pg/better-auth-schema";
 import * as pgBilling from "./pg/billing.schema";
+import * as pgGa4 from "./pg/ga4.schema";
 import * as pgGsc from "./pg/gsc.schema";
-import * as pgReddit from "./pg/reddit-attribution.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
 
 // Guards the ONE structural artifact `db:generate` does not regenerate: the
@@ -133,20 +137,30 @@ function foreignKeys(table: Table, dialect: Dialect): string[] {
   );
 }
 
+function checkNames(table: Table, dialect: Dialect): string[] {
+  return sortStrings(
+    getConfig(table, dialect).checks.map((check) => check.name),
+  );
+}
+
 const sqliteAppTables = tablesFrom(
   sqliteApp,
+  sqliteProjectContext,
+  sqliteAudit,
   sqliteSam,
   sqliteBilling,
+  sqliteGa4,
   sqliteGsc,
-  sqliteReddit,
   sqliteTelemetry,
 );
 const pgAppTables = tablesFrom(
   pgApp,
+  pgProjectContext,
+  pgAudit,
   pgSam,
   pgBilling,
+  pgGa4,
   pgGsc,
-  pgReddit,
   pgTelemetry,
 );
 const sqliteAuthTables = tablesFrom(sqliteAuth);
@@ -183,6 +197,11 @@ describe("schema parity: application tables", () => {
       it("has matching foreign keys (incl. onDelete)", () => {
         expect(foreignKeys(pgTable, "pg")).toEqual(
           foreignKeys(sqliteTable, "sqlite"),
+        );
+      });
+      it("has matching check constraints", () => {
+        expect(checkNames(pgTable, "pg")).toEqual(
+          checkNames(sqliteTable, "sqlite"),
         );
       });
     });

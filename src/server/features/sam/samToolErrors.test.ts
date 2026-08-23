@@ -16,13 +16,13 @@ describe("toSamToolError", () => {
   });
 
   it("does not expose an unknown upstream error message to the model", () => {
-    expect(toSamToolError(new Error("database password: secret-value"))).toEqual(
-      {
-        error: {
-          code: "unavailable",
-          message: "That data source is temporarily unavailable.",
-        },
+    expect(
+      toSamToolError(new Error("database password: secret-value")),
+    ).toEqual({
+      error: {
+        code: "unavailable",
+        message: "That data source is temporarily unavailable.",
       },
-    );
+    });
   });
 });

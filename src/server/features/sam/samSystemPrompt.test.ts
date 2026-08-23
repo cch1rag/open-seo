@@ -11,11 +11,11 @@ describe("buildSamSystemPrompt", () => {
         locationCode: 2840,
         languageCode: "en",
       },
-      { memoryIsEmpty: true },
+      { intakeMode: true },
     );
 
     expect(prompt).toContain("untrusted evidence");
     expect(prompt).not.toContain("pick up to 10 representative ones");
-    expect(prompt).not.toContain("Save what you inferred to the memory block");
+    expect(prompt).not.toContain("Save what you inferred right away");
   });
 });
