@@ -2,6 +2,9 @@
 
 - This repository is a private fork. Never push to `upstream` (`https://github.com/every-app/open-seo.git`).
 - Any user-authorized push must target `origin` (`https://github.com/cch1rag/open-seo.git`) only.
+- Before syncing with upstream, read `docs/FORK_SYNC.md`: it lists what this fork
+  changes, the settled resolution for every file that conflicts on most syncs, and
+  the verification order that avoids a serial lint-fix loop.
 
 # Agent guidance
 
