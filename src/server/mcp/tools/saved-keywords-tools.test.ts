@@ -16,6 +16,12 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   },
 }));
 
+// project-auth imports the repository for user-scoped (API key) credentials;
+// unused here (pinned context) but keeps the db out of the module graph.
+vi.mock("@/server/auth/repositories/AuthRepository", () => ({
+  AuthRepository: { getMembership: vi.fn() },
+}));
+
 vi.mock("@/server/features/keywords/services/KeywordResearchService", () => ({
   KeywordResearchService: {
     getSavedKeywords: mocks.getSavedKeywords,
@@ -190,8 +196,10 @@ describe("saved keyword MCP tools", () => {
     });
     expect(result.structuredContent).toMatchObject({
       totalCount: 1,
-      rows: [{ keyword: "technical seo" }],
+      rows: [{ keyword: "technical seo", tags: ["Content"] }],
+      tags: [{ name: "Content", keywordCount: 1 }],
     });
+    expect(result.structuredContent?.rows?.[0]).not.toHaveProperty("id");
     const [content] = result.content;
     expect(content).toMatchObject({ type: "text" });
     expect(content?.type === "text" ? content.text : "").toContain(

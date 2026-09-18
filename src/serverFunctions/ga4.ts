@@ -5,12 +5,15 @@ import { z } from "zod";
 import { shiftGa4Date } from "@/server/features/ga4/services/Ga4Dates";
 import { Ga4OrganicOverviewService } from "@/server/features/ga4/services/Ga4OrganicOverviewService";
 import { Ga4Service } from "@/server/features/ga4/services/Ga4Service";
+import { AppError } from "@/server/lib/errors";
 import { Ga4ReportError } from "@/server/lib/ga4Errors";
 import { hasSelfHostedGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import {
   createSelfHostedGoogleAuthorizationUrl,
   GA4_INTEGRATION,
 } from "@/server/features/google/selfHostedOAuth";
+import { hasOrgPermission } from "@/lib/org-permissions";
+import { requireOrgPermission } from "@/server/auth/org-gate";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
@@ -41,6 +44,7 @@ export const getGa4Connection = createServerFn({ method: "POST" })
       ]);
     return {
       connected: Boolean(connection),
+      canManage: hasOrgPermission(context.role, { integration: ["manage"] }),
       currentUserHasGrant,
       googleOAuthConfigured: hosted || ga4Configured,
       propertyId: connection?.propertyId ?? null,
@@ -123,6 +127,15 @@ export const getGa4DashboardReport = createServerFn({ method: "POST" })
       ) {
         return { connected: false as const };
       }
+      // Google's per-property reporting quota is exhausted: an external,
+      // transient condition, not an app fault. Surface it as RATE_LIMITED so
+      // error tracking skips it — the card keeps its own "try again" copy.
+      if (
+        error instanceof Ga4ReportError &&
+        error.code === "ga4_quota_exhausted"
+      ) {
+        throw new AppError("RATE_LIMITED");
+      }
       throw error;
     }
   });
@@ -152,6 +165,7 @@ export const setGa4Property = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(setPropertySchema)
   .handler(async ({ data, context }) => {
+    requireOrgPermission(context, { integration: ["manage"] });
     const connection = await Ga4Service.setProperty({
       projectId: context.projectId,
       organizationId: context.organizationId,
@@ -171,6 +185,10 @@ export const setGa4Property = createServerFn({ method: "POST" })
       connected: true as const,
       propertyId: connection.propertyId,
       propertyDisplayName: connection.propertyDisplayName,
+      propertyTimeZone: connection.propertyTimeZone,
+      propertyCurrencyCode: connection.propertyCurrencyCode,
+      connectedByEmail: connection.connectedAccountEmail,
+      connectedAt: connection.createdAt,
     };
   });
 
@@ -178,10 +196,8 @@ export const disconnectGa4 = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(projectScopedSchema)
   .handler(async ({ context }) => {
-    await Ga4Service.disconnect({
-      projectId: context.projectId,
-      userId: context.userId,
-    });
+    requireOrgPermission(context, { integration: ["manage"] });
+    await Ga4Service.disconnect({ projectId: context.projectId });
     waitUntil(
       captureServerEvent({
         distinctId: context.userId,

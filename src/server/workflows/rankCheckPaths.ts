@@ -10,6 +10,7 @@ import type {
   RankCheckResult,
   RankCheckTaskInput,
 } from "@/server/lib/dataforseo";
+import { AppError } from "@/server/lib/errors";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import { KEYWORDS_PER_BATCH } from "@/shared/rank-tracking";
 import { pgStep } from "@/server/workflows/pgStep";
@@ -100,15 +101,27 @@ async function checkBatchLive(
     ),
   );
   const results: RankCheckResultWithDevice[] = [];
-  for (const outcome of settled) {
+  let firstError: string | null = null;
+  settled.forEach((outcome, index) => {
     if (outcome.status === "fulfilled") {
       results.push(outcome.value);
-    } else {
-      console.error(
-        `[rank-check] ${ctx.runId} live call failed:`,
-        outcome.reason,
-      );
+      return;
     }
+    const reason: unknown = outcome.reason;
+    const code = reason instanceof AppError ? reason.code : "UNKNOWN";
+    const message = reason instanceof Error ? reason.message : String(reason);
+    firstError ??= message;
+    // DataForSEO erring on its own side is a provider flake, not our bug: the
+    // keyword just misses this run and finalize reports it to the user. Every
+    // other rejection (no credits, bad API key) is ours and stays at error.
+    const log = code === "UPSTREAM_UNAVAILABLE" ? console.warn : console.error;
+    const task = tasks[index];
+    log(
+      `[rank-check] ${ctx.runId} live call failed (${code}) keyword="${task.keyword}" device=${task.device}: ${message}`,
+    );
+  });
+  if (firstError) {
+    await RankTrackingRepository.setRunErrorIfEmpty(ctx.runId, firstError);
   }
   if (results.length > 0) {
     await RankTrackingRepository.insertSnapshots(
@@ -199,6 +212,7 @@ async function collectQueuedRound(
   const completed: RankCheckResultWithDevice[] = [];
   const stillPending: PostedRankCheckTask[] = [];
   const failed: PostedRankCheckTask[] = [];
+  let firstError: string | null = null;
 
   for (let i = 0; i < tasks.length; i += TASK_GET_CONCURRENCY) {
     const chunk = tasks.slice(i, i + TASK_GET_CONCURRENCY);
@@ -227,6 +241,7 @@ async function collectQueuedRound(
         console.warn(
           `[rank-check] ${ctx.runId} task ${task.taskId} failed: ${result.value.message}`,
         );
+        firstError ??= result.value.message;
         failed.push(task);
       } else {
         completed.push({ ...result.value.result, device: task.device });
@@ -234,6 +249,9 @@ async function collectQueuedRound(
     });
   }
 
+  if (firstError) {
+    await RankTrackingRepository.setRunErrorIfEmpty(ctx.runId, firstError);
+  }
   if (completed.length > 0) {
     await RankTrackingRepository.insertSnapshots(
       mapResultsToSnapshotRows(ctx.runId, completed),
