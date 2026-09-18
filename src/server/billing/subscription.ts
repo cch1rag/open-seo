@@ -130,8 +130,9 @@ async function getUsageCreditsRemaining(customerId: string): Promise<{
   // credits out of chat (2026-07-20). The topup balance genuinely doesn't
   // exist until a first top-up, so 0 is the honest reading there.
   if (!monthlyBalance) {
+    // INTERNAL_ERROR, not UPSTREAM_UNAVAILABLE: this must stay reportable.
     throw new AppError(
-      "UPSTREAM_UNAVAILABLE",
+      "INTERNAL_ERROR",
       `Autumn check returned no ${AUTUMN_SEO_DATA_BALANCE_FEATURE_ID} balance for customer ${customerId}`,
     );
   }
@@ -223,7 +224,7 @@ export async function assertUsageCreditsAvailable(
  * Deducts a USD provider cost from the org's shared usage-credit pool: applies
  * the platform markup, converts to credits, spends monthly `usage_credits`
  * first then `topup_credits`, and emits the usage:credits_consume event. Both
- * DataForSEO and onboarding-LLM spend route through here, so they draw from the
+ * DataForSEO and agent-LLM spend route through here, so they draw from the
  * one pool. Pass `monthlyRemaining` from the balance check that gated the call.
  */
 export async function trackUsageCreditSpend(args: {
@@ -233,12 +234,12 @@ export async function trackUsageCreditSpend(args: {
   costUsd: number;
   monthlyRemaining: number;
   properties?: Record<string, unknown>;
-}): Promise<void> {
+}): Promise<{ monthlyCredits: number; topupCredits: number }> {
   const totalCostUsd = roundUsdForBilling(args.costUsd * SEO_DATA_COST_MARKUP);
   const totalCostCredits = Math.ceil(
     totalCostUsd * AUTUMN_SEO_DATA_CREDITS_PER_USD,
   );
-  if (totalCostCredits <= 0) return;
+  if (totalCostCredits <= 0) return { monthlyCredits: 0, topupCredits: 0 };
 
   // Clamp at 0: Autumn balances can read negative after an overdraft, and a
   // negative monthly reading here would inflate the topup deduction.
@@ -299,4 +300,5 @@ export async function trackUsageCreditSpend(args: {
       cost_usd: totalCostUsd,
     },
   });
+  return { monthlyCredits: monthlyDeduct, topupCredits: topupDeduct };
 }

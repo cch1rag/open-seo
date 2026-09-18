@@ -10,18 +10,18 @@
 
 ## Critique of the original findings
 
-| Finding | Assessment | Revised priority and rationale |
-| --- | --- | --- |
-| Crawled pages can prompt-inject SAM and get persisted | The exposure is real: `read_pages` returns page text to the model and the prompt tells it to save inferred context. No exploit or cross-project authorization bypass was demonstrated. | **High integrity risk**, not “critical”: make external data non-authoritative and remove automatic persistence. Approval then limits the blast radius. |
-| 48 steps / 6,000 output tokens and no hard tool/cost cap | Confirmed. The code explicitly relies on “per-step metering and the model stopping”; `onStepFinish` only adds LLM cost after each step. | **High cost/availability risk**. Enforce total and paid-tool limits in the wrapper; choose conservative defaults from production telemetry before shipping. |
-| Rewind does not abort in-flight work | Confirmed. SAM supplies a newly created placeholder signal and the code comments that no handler reads it. | **High cost/UX risk**, not a proven security issue. Thread the real signal where SDK/client support exists, and test the remaining unsupported providers explicitly. |
-| Durable memory and saved keywords rely on prompt wording | Confirmed for memory—`set_context` is explicitly writable and the fresh-project prompt demands an immediate write. `save_keywords` is model-callable. | **High integrity/UX risk**. First remove auto-writing; add user approval for tool-initiated writes once the SDK capability is verified. Preserve an explicit user save action rather than adding friction to every harmless reply. |
-| Credits are checked before but charged after a turn | Confirmed for hosted credit reconciliation. It is not proof that a customer can overrun a balance; billing may have its own controls. | **Medium**: tool budgets are the immediate control. Add low-credit/charge telemetry and only introduce reservations after measuring whether the billing API supports a safe atomic hold. |
-| Raw exception messages are returned to the model | Confirmed in `adaptMcpTool`. | **Medium**: normalize expected errors and redact unknown failures, preserving enough category information for recovery. |
-| Model fallback and provider are not auditable per turn | Cost is recorded as OpenRouter cost and a static `provider: "openrouter"`; final routing/fallback detail is not retained. There is no evidence that unsafe fallback happens. | **Medium observability gap**: record resolved response metadata where available. Do not add a new model allowlist unless product policy requires one. |
-| Raw project metadata is interpolated into the prompt | It is quoted but not separately structured. This is a defense-in-depth concern, not a demonstrated prompt injection path. | **Low**: delimit/serialize it as metadata while touching the prompt; no standalone feature. |
-| “Narrate nothing” and research-log wording | These are product tradeoffs, not defects on their own. | **Not in this hardening scope**. Preserve concise interaction; expose only meaningful states such as approval, partial result, or budget exhaustion. |
-| SAM lifecycle lacks direct tests | TokenSave reports 13 of 14 production symbols in `SamChatAgent.ts` lack direct coverage (one apparent `fetch` association is unrelated). | **Medium regression risk**: add focused tests around the hardening seams, not a speculative end-to-end harness first. |
+| Finding                                                  | Assessment                                                                                                                                                                             | Revised priority and rationale                                                                                                                                                                                                     |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Crawled pages can prompt-inject SAM and get persisted    | The exposure is real: `read_pages` returns page text to the model and the prompt tells it to save inferred context. No exploit or cross-project authorization bypass was demonstrated. | **High integrity risk**, not “critical”: make external data non-authoritative and remove automatic persistence. Approval then limits the blast radius.                                                                             |
+| 48 steps / 6,000 output tokens and no hard tool/cost cap | Confirmed. The code explicitly relies on “per-step metering and the model stopping”; `onStepFinish` only adds LLM cost after each step.                                                | **High cost/availability risk**. Enforce total and paid-tool limits in the wrapper; choose conservative defaults from production telemetry before shipping.                                                                        |
+| Rewind does not abort in-flight work                     | Confirmed. SAM supplies a newly created placeholder signal and the code comments that no handler reads it.                                                                             | **High cost/UX risk**, not a proven security issue. Thread the real signal where SDK/client support exists, and test the remaining unsupported providers explicitly.                                                               |
+| Durable memory and saved keywords rely on prompt wording | Confirmed for memory—`set_context` is explicitly writable and the fresh-project prompt demands an immediate write. `save_keywords` is model-callable.                                  | **High integrity/UX risk**. First remove auto-writing; add user approval for tool-initiated writes once the SDK capability is verified. Preserve an explicit user save action rather than adding friction to every harmless reply. |
+| Credits are checked before but charged after a turn      | Confirmed for hosted credit reconciliation. It is not proof that a customer can overrun a balance; billing may have its own controls.                                                  | **Medium**: tool budgets are the immediate control. Add low-credit/charge telemetry and only introduce reservations after measuring whether the billing API supports a safe atomic hold.                                           |
+| Raw exception messages are returned to the model         | Confirmed in `adaptMcpTool`.                                                                                                                                                           | **Medium**: normalize expected errors and redact unknown failures, preserving enough category information for recovery.                                                                                                            |
+| Model fallback and provider are not auditable per turn   | Cost is recorded as OpenRouter cost and a static `provider: "openrouter"`; final routing/fallback detail is not retained. There is no evidence that unsafe fallback happens.           | **Medium observability gap**: record resolved response metadata where available. Do not add a new model allowlist unless product policy requires one.                                                                              |
+| Raw project metadata is interpolated into the prompt     | It is quoted but not separately structured. This is a defense-in-depth concern, not a demonstrated prompt injection path.                                                              | **Low**: delimit/serialize it as metadata while touching the prompt; no standalone feature.                                                                                                                                        |
+| “Narrate nothing” and research-log wording               | These are product tradeoffs, not defects on their own.                                                                                                                                 | **Not in this hardening scope**. Preserve concise interaction; expose only meaningful states such as approval, partial result, or budget exhaustion.                                                                               |
+| SAM lifecycle lacks direct tests                         | TokenSave reports 13 of 14 production symbols in `SamChatAgent.ts` lack direct coverage (one apparent `fetch` association is unrelated).                                               | **Medium regression risk**: add focused tests around the hardening seams, not a speculative end-to-end harness first.                                                                                                              |
 
 ## Critique of the first plan and decisions applied here
 
@@ -37,6 +37,7 @@
 ### Task 1: Verify the extension points and define acceptance tests
 
 **Files:**
+
 - Inspect: installed Agents/AI SDK declarations under `node_modules` (read-only)
 - Create: `src/server/features/sam/samChatTools.test.ts`
 - Create: `src/server/features/sam/samSystemPrompt.test.ts`
@@ -51,6 +52,7 @@
 ### Task 2: Remove autonomous context writes and harden the prompt's evidence model
 
 **Files:**
+
 - Modify: `src/server/features/sam/samSystemPrompt.ts`
 - Modify: `src/server/features/sam/samChatTools.ts`
 - Modify: existing scrape tests under `src/server/lib/scrape.test.ts` as needed
@@ -66,6 +68,7 @@
 ### Task 3: Add an enforcement wrapper for bounded tool work and safe errors
 
 **Files:**
+
 - Create: `src/server/features/sam/samToolPolicy.ts`
 - Create: `src/server/features/sam/samToolPolicy.test.ts`
 - Modify: `src/server/features/sam/samChatTools.ts`
@@ -87,6 +90,7 @@ Example public result:
 ### Task 4: Propagate genuine cancellation as far as the stack supports
 
 **Files:**
+
 - Modify: `src/server/features/sam/SamChatAgent.ts`
 - Modify: `src/server/features/sam/samChatTools.ts`
 - Modify: `src/server/lib/scrape.ts` only if its request path accepts a signal
@@ -101,6 +105,7 @@ Example public result:
 ### Task 5: Require a verified approval before a SAM-proposed durable mutation
 
 **Files:**
+
 - Modify: `src/server/features/sam/samChatTools.ts`
 - Modify: `src/server/features/sam/SamChatAgent.ts`
 - Modify: `src/server/mcp/tools/save-keywords.ts`
@@ -118,6 +123,7 @@ Example public result:
 ### Task 6: Add only the observability needed to operate the controls
 
 **Files:**
+
 - Modify: `src/server/features/sam/SamChatAgent.ts`
 - Modify: `src/server/lib/openrouter.ts` only if a resolved model descriptor does not already exist
 - Modify: `src/server/lib/chatAgent.ts` only if the resolver must expose non-secret model configuration
@@ -131,6 +137,7 @@ Example public result:
 ### Task 7: Release-gate the targeted behavior
 
 **Files:**
+
 - Modify: the tests created above
 - Add documentation only if the approval flow or configurable limits require maintainer operation; otherwise keep the contract in code/tests.
 

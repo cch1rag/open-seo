@@ -232,6 +232,35 @@ export const featurePages = {
           "It is useful for founders, marketers, agencies, and developers who need a shared crawl report and optional Lighthouse issue export.",
       },
     ],
+    guides: {
+      title: "The Site Audit Strategy Library",
+      description:
+        "Practitioner strategies for turning a crawl into scheduled work. Each guide includes a full walkthrough and a copy-paste MCP prompt.",
+      items: [
+        {
+          label: "The technical SEO audit checklist that ends in fixes",
+          description:
+            "Triage 1,180 findings down to the 35 that stop a page being seen.",
+          href: "/library/site-audit/technical-seo-audit-checklist",
+        },
+        {
+          label: "Write an audit report the client will actually act on",
+          description:
+            "Six sections that tie each finding to a page, a cost, and an owner.",
+          href: "/library/site-audit/seo-audit-report-template",
+        },
+        {
+          label: "Index bloat: when the fix is deleting pages",
+          description:
+            "Check what Google actually indexed before you remove anything.",
+          href: "/library/site-audit/index-bloat",
+        },
+      ],
+      cta: {
+        label: "Browse all site audit strategies",
+        href: "/library/site-audit",
+      },
+    },
   },
   backlinks: {
     slug: FEATURE_PAGE_SLUGS.backlinks,
@@ -395,6 +424,41 @@ export const featurePages = {
           "Not quite. It includes an estimated-traffic metric, but the value is seeing which keywords and pages produce that traffic, which a plain traffic checker doesn't show.",
       },
     ],
+    guides: {
+      title: "The Competitive Analysis Strategy Library",
+      description:
+        "Practitioner strategies for turning a domain overview into a decision. Each guide includes a full walkthrough and a copy-paste MCP prompt.",
+      items: [
+        {
+          label: "Find out who your real competitors are",
+          description:
+            "Compare a keyword set and read the domains actually in your SERPs.",
+          href: "/library/competitive-analysis/find-your-real-competitors",
+        },
+        {
+          label: "Keyword gap analysis: subtract the brand terms first",
+          description:
+            "Strip brand from both sides and the gap becomes buildable.",
+          href: "/library/competitive-analysis/keyword-gap-analysis",
+        },
+        {
+          label: "How accurate are competitor traffic estimates?",
+          description:
+            "Close-variant stacking, other business lines, and how to correct for both.",
+          href: "/library/competitive-analysis/competitor-traffic-estimates",
+        },
+        {
+          label: "Read a competitor's link profile before you copy it",
+          description:
+            "Referring domains, spam score, and the broken links worth chasing.",
+          href: "/library/competitive-analysis/backlink-gap-analysis",
+        },
+      ],
+      cta: {
+        label: "Browse all competitive analysis strategies",
+        href: "/library/competitive-analysis",
+      },
+    },
   },
   rankTracking: {
     slug: FEATURE_PAGE_SLUGS.rankTracking,

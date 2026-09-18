@@ -53,3 +53,61 @@ export const keywordResearchStrategies: StrategyLibraryItem[] = [
     href: "/library/keyword-research/positioning-to-demand",
   },
 ];
+
+export const COMPETITIVE_ANALYSIS_LIBRARY = {
+  name: "Competitive Analysis",
+  path: "/library/competitive-analysis",
+};
+
+export const competitiveAnalysisStrategies: StrategyLibraryItem[] = [
+  {
+    title: "Find out who your real competitors are",
+    description:
+      "The domains sharing your SERPs are rarely the companies on your battlecard. Compare a keyword set and read the list you actually compete against.",
+    href: "/library/competitive-analysis/find-your-real-competitors",
+  },
+  {
+    title: "Keyword gap analysis: subtract the brand terms first",
+    description:
+      "Most ranked-keyword lists are mostly brand. Strip brand from both sides and the gap becomes a short, buildable list.",
+    href: "/library/competitive-analysis/keyword-gap-analysis",
+  },
+  {
+    title: "How accurate are competitor traffic estimates?",
+    description:
+      "Read a domain overview without being fooled by close-variant stacking or a headline traffic number from another business line.",
+    href: "/library/competitive-analysis/competitor-traffic-estimates",
+  },
+  {
+    title: "Read a competitor's link profile before you copy it",
+    description:
+      "Referring domains, spam score, and broken links tell you whether an authority advantage is real or repeated.",
+    href: "/library/competitive-analysis/backlink-gap-analysis",
+  },
+];
+
+export const SITE_AUDIT_LIBRARY = {
+  name: "Site Audit",
+  path: "/library/site-audit",
+};
+
+export const siteAuditStrategies: StrategyLibraryItem[] = [
+  {
+    title: "The technical SEO audit checklist that ends in fixes",
+    description:
+      "One crawl returned 1,180 findings and 35 that mattered. Sort by severity, group by cause, and read the fix that ships with every issue.",
+    href: "/library/site-audit/technical-seo-audit-checklist",
+  },
+  {
+    title: "Write an audit report the client will actually act on",
+    description:
+      "A six-section structure that ties every finding to a page, a cost, and a business number, plus what to leave out.",
+    href: "/library/site-audit/seo-audit-report-template",
+  },
+  {
+    title: "Index bloat: when the fix is deleting pages",
+    description:
+      "Five million pages came out of one site and it recovered. On a small site the same instinct usually wastes a weekend. How to tell which you have.",
+    href: "/library/site-audit/index-bloat",
+  },
+];

@@ -23,6 +23,7 @@ import { Route as BlogsSplatRouteImport } from './routes/blogs/$'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 import { Route as ApiBacklinkCheckRouteImport } from './routes/api/backlink-check'
+import { Route as MarketingSupportRouteImport } from './routes/_marketing/support'
 import { Route as MarketingRoadmapRouteImport } from './routes/_marketing/roadmap'
 import { Route as MarketingPricingRouteImport } from './routes/_marketing/pricing'
 import { Route as MarketingOpenSourceSeoRouteImport } from './routes/_marketing/open-source-seo'
@@ -40,7 +41,12 @@ import { Route as MarketingFeaturesBacklinksRouteImport } from './routes/_market
 import { Route as MarketingFeaturesBacklinkCheckerRouteImport } from './routes/_marketing/features/backlink-checker'
 import { Route as MarketingFeaturesAiSearchPromptsRouteImport } from './routes/_marketing/features/ai-search-prompts'
 import { Route as MarketingFeaturesAiBrandVisibilityRouteImport } from './routes/_marketing/features/ai-brand-visibility'
+import { Route as MarketingLibrarySiteAuditIndexRouteImport } from './routes/_marketing/library/site-audit/index'
 import { Route as MarketingLibraryKeywordResearchIndexRouteImport } from './routes/_marketing/library/keyword-research/index'
+import { Route as MarketingLibraryCompetitiveAnalysisIndexRouteImport } from './routes/_marketing/library/competitive-analysis/index'
+import { Route as MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport } from './routes/_marketing/library/site-audit/technical-seo-audit-checklist'
+import { Route as MarketingLibrarySiteAuditSeoAuditReportTemplateRouteImport } from './routes/_marketing/library/site-audit/seo-audit-report-template'
+import { Route as MarketingLibrarySiteAuditIndexBloatRouteImport } from './routes/_marketing/library/site-audit/index-bloat'
 import { Route as MarketingLibraryKeywordResearchSeedFromConversationRouteImport } from './routes/_marketing/library/keyword-research/seed-from-conversation'
 import { Route as MarketingLibraryKeywordResearchSearchIntentMappingRouteImport } from './routes/_marketing/library/keyword-research/search-intent-mapping'
 import { Route as MarketingLibraryKeywordResearchPositioningToDemandRouteImport } from './routes/_marketing/library/keyword-research/positioning-to-demand'
@@ -49,6 +55,10 @@ import { Route as MarketingLibraryKeywordResearchLongTailQuestionMiningRouteImpo
 import { Route as MarketingLibraryKeywordResearchIntentBeyondGoogleRouteImport } from './routes/_marketing/library/keyword-research/intent-beyond-google'
 import { Route as MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRouteImport } from './routes/_marketing/library/keyword-research/gsc-programmatic-discovery'
 import { Route as MarketingLibraryKeywordResearchClusterTopicalHubsRouteImport } from './routes/_marketing/library/keyword-research/cluster-topical-hubs'
+import { Route as MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRouteImport } from './routes/_marketing/library/competitive-analysis/keyword-gap-analysis'
+import { Route as MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRouteImport } from './routes/_marketing/library/competitive-analysis/find-your-real-competitors'
+import { Route as MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRouteImport } from './routes/_marketing/library/competitive-analysis/competitor-traffic-estimates'
+import { Route as MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRouteImport } from './routes/_marketing/library/competitive-analysis/backlink-gap-analysis'
 
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
@@ -118,6 +128,11 @@ const ApiBacklinkCheckRoute = ApiBacklinkCheckRouteImport.update({
   id: '/api/backlink-check',
   path: '/api/backlink-check',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingSupportRoute = MarketingSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => MarketingRoute,
 } as any)
 const MarketingRoadmapRoute = MarketingRoadmapRouteImport.update({
   id: '/roadmap',
@@ -215,10 +230,40 @@ const MarketingFeaturesAiBrandVisibilityRoute =
     path: '/features/ai-brand-visibility',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingLibrarySiteAuditIndexRoute =
+  MarketingLibrarySiteAuditIndexRouteImport.update({
+    id: '/library/site-audit/',
+    path: '/library/site-audit/',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 const MarketingLibraryKeywordResearchIndexRoute =
   MarketingLibraryKeywordResearchIndexRouteImport.update({
     id: '/library/keyword-research/',
     path: '/library/keyword-research/',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryCompetitiveAnalysisIndexRoute =
+  MarketingLibraryCompetitiveAnalysisIndexRouteImport.update({
+    id: '/library/competitive-analysis/',
+    path: '/library/competitive-analysis/',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute =
+  MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport.update({
+    id: '/library/site-audit/technical-seo-audit-checklist',
+    path: '/library/site-audit/technical-seo-audit-checklist',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibrarySiteAuditSeoAuditReportTemplateRoute =
+  MarketingLibrarySiteAuditSeoAuditReportTemplateRouteImport.update({
+    id: '/library/site-audit/seo-audit-report-template',
+    path: '/library/site-audit/seo-audit-report-template',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibrarySiteAuditIndexBloatRoute =
+  MarketingLibrarySiteAuditIndexBloatRouteImport.update({
+    id: '/library/site-audit/index-bloat',
+    path: '/library/site-audit/index-bloat',
     getParentRoute: () => MarketingRoute,
   } as any)
 const MarketingLibraryKeywordResearchSeedFromConversationRoute =
@@ -271,6 +316,32 @@ const MarketingLibraryKeywordResearchClusterTopicalHubsRoute =
     path: '/library/keyword-research/cluster-topical-hubs',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRoute =
+  MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRouteImport.update({
+    id: '/library/competitive-analysis/keyword-gap-analysis',
+    path: '/library/competitive-analysis/keyword-gap-analysis',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute =
+  MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRouteImport.update({
+    id: '/library/competitive-analysis/find-your-real-competitors',
+    path: '/library/competitive-analysis/find-your-real-competitors',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute =
+  MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRouteImport.update(
+    {
+      id: '/library/competitive-analysis/competitor-traffic-estimates',
+      path: '/library/competitive-analysis/competitor-traffic-estimates',
+      getParentRoute: () => MarketingRoute,
+    } as any,
+  )
+const MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute =
+  MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRouteImport.update({
+    id: '/library/competitive-analysis/backlink-gap-analysis',
+    path: '/library/competitive-analysis/backlink-gap-analysis',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
@@ -281,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/pricing': typeof MarketingPricingRoute
   '/roadmap': typeof MarketingRoadmapRoute
+  '/support': typeof MarketingSupportRoute
   '/api/backlink-check': typeof ApiBacklinkCheckRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
@@ -303,6 +375,10 @@ export interface FileRoutesByFullPath {
   '/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/features/': typeof MarketingFeaturesIndexRoute
   '/library/': typeof MarketingLibraryIndexRoute
+  '/library/competitive-analysis/backlink-gap-analysis': typeof MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute
+  '/library/competitive-analysis/competitor-traffic-estimates': typeof MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute
+  '/library/competitive-analysis/find-your-real-competitors': typeof MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute
+  '/library/competitive-analysis/keyword-gap-analysis': typeof MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRoute
   '/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   '/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   '/library/keyword-research/intent-beyond-google': typeof MarketingLibraryKeywordResearchIntentBeyondGoogleRoute
@@ -311,7 +387,12 @@ export interface FileRoutesByFullPath {
   '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
+  '/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
+  '/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  '/library/competitive-analysis/': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
+  '/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
 }
 export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
@@ -321,6 +402,7 @@ export interface FileRoutesByTo {
   '/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/pricing': typeof MarketingPricingRoute
   '/roadmap': typeof MarketingRoadmapRoute
+  '/support': typeof MarketingSupportRoute
   '/api/backlink-check': typeof ApiBacklinkCheckRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
@@ -344,6 +426,10 @@ export interface FileRoutesByTo {
   '/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/features': typeof MarketingFeaturesIndexRoute
   '/library': typeof MarketingLibraryIndexRoute
+  '/library/competitive-analysis/backlink-gap-analysis': typeof MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute
+  '/library/competitive-analysis/competitor-traffic-estimates': typeof MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute
+  '/library/competitive-analysis/find-your-real-competitors': typeof MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute
+  '/library/competitive-analysis/keyword-gap-analysis': typeof MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRoute
   '/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   '/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   '/library/keyword-research/intent-beyond-google': typeof MarketingLibraryKeywordResearchIntentBeyondGoogleRoute
@@ -352,7 +438,12 @@ export interface FileRoutesByTo {
   '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
+  '/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
+  '/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  '/library/competitive-analysis': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/library/keyword-research': typeof MarketingLibraryKeywordResearchIndexRoute
+  '/library/site-audit': typeof MarketingLibrarySiteAuditIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -364,6 +455,7 @@ export interface FileRoutesById {
   '/_marketing/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/_marketing/pricing': typeof MarketingPricingRoute
   '/_marketing/roadmap': typeof MarketingRoadmapRoute
+  '/_marketing/support': typeof MarketingSupportRoute
   '/api/backlink-check': typeof ApiBacklinkCheckRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
@@ -387,6 +479,10 @@ export interface FileRoutesById {
   '/_marketing/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/_marketing/features/': typeof MarketingFeaturesIndexRoute
   '/_marketing/library/': typeof MarketingLibraryIndexRoute
+  '/_marketing/library/competitive-analysis/backlink-gap-analysis': typeof MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute
+  '/_marketing/library/competitive-analysis/competitor-traffic-estimates': typeof MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute
+  '/_marketing/library/competitive-analysis/find-your-real-competitors': typeof MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute
+  '/_marketing/library/competitive-analysis/keyword-gap-analysis': typeof MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRoute
   '/_marketing/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   '/_marketing/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   '/_marketing/library/keyword-research/intent-beyond-google': typeof MarketingLibraryKeywordResearchIntentBeyondGoogleRoute
@@ -395,7 +491,12 @@ export interface FileRoutesById {
   '/_marketing/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/_marketing/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/_marketing/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/_marketing/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
+  '/_marketing/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
+  '/_marketing/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  '/_marketing/library/competitive-analysis/': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/_marketing/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
+  '/_marketing/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -408,6 +509,7 @@ export interface FileRouteTypes {
     | '/open-source-seo'
     | '/pricing'
     | '/roadmap'
+    | '/support'
     | '/api/backlink-check'
     | '/api/event'
     | '/api/subscribe'
@@ -430,6 +532,10 @@ export interface FileRouteTypes {
     | '/features/site-audit'
     | '/features/'
     | '/library/'
+    | '/library/competitive-analysis/backlink-gap-analysis'
+    | '/library/competitive-analysis/competitor-traffic-estimates'
+    | '/library/competitive-analysis/find-your-real-competitors'
+    | '/library/competitive-analysis/keyword-gap-analysis'
     | '/library/keyword-research/cluster-topical-hubs'
     | '/library/keyword-research/gsc-programmatic-discovery'
     | '/library/keyword-research/intent-beyond-google'
@@ -438,7 +544,12 @@ export interface FileRouteTypes {
     | '/library/keyword-research/positioning-to-demand'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
+    | '/library/site-audit/index-bloat'
+    | '/library/site-audit/seo-audit-report-template'
+    | '/library/site-audit/technical-seo-audit-checklist'
+    | '/library/competitive-analysis/'
     | '/library/keyword-research/'
+    | '/library/site-audit/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/privacy'
@@ -448,6 +559,7 @@ export interface FileRouteTypes {
     | '/open-source-seo'
     | '/pricing'
     | '/roadmap'
+    | '/support'
     | '/api/backlink-check'
     | '/api/event'
     | '/api/subscribe'
@@ -471,6 +583,10 @@ export interface FileRouteTypes {
     | '/features/site-audit'
     | '/features'
     | '/library'
+    | '/library/competitive-analysis/backlink-gap-analysis'
+    | '/library/competitive-analysis/competitor-traffic-estimates'
+    | '/library/competitive-analysis/find-your-real-competitors'
+    | '/library/competitive-analysis/keyword-gap-analysis'
     | '/library/keyword-research/cluster-topical-hubs'
     | '/library/keyword-research/gsc-programmatic-discovery'
     | '/library/keyword-research/intent-beyond-google'
@@ -479,7 +595,12 @@ export interface FileRouteTypes {
     | '/library/keyword-research/positioning-to-demand'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
+    | '/library/site-audit/index-bloat'
+    | '/library/site-audit/seo-audit-report-template'
+    | '/library/site-audit/technical-seo-audit-checklist'
+    | '/library/competitive-analysis'
     | '/library/keyword-research'
+    | '/library/site-audit'
   id:
     | '__root__'
     | '/_marketing'
@@ -490,6 +611,7 @@ export interface FileRouteTypes {
     | '/_marketing/open-source-seo'
     | '/_marketing/pricing'
     | '/_marketing/roadmap'
+    | '/_marketing/support'
     | '/api/backlink-check'
     | '/api/event'
     | '/api/subscribe'
@@ -513,6 +635,10 @@ export interface FileRouteTypes {
     | '/_marketing/features/site-audit'
     | '/_marketing/features/'
     | '/_marketing/library/'
+    | '/_marketing/library/competitive-analysis/backlink-gap-analysis'
+    | '/_marketing/library/competitive-analysis/competitor-traffic-estimates'
+    | '/_marketing/library/competitive-analysis/find-your-real-competitors'
+    | '/_marketing/library/competitive-analysis/keyword-gap-analysis'
     | '/_marketing/library/keyword-research/cluster-topical-hubs'
     | '/_marketing/library/keyword-research/gsc-programmatic-discovery'
     | '/_marketing/library/keyword-research/intent-beyond-google'
@@ -521,7 +647,12 @@ export interface FileRouteTypes {
     | '/_marketing/library/keyword-research/positioning-to-demand'
     | '/_marketing/library/keyword-research/search-intent-mapping'
     | '/_marketing/library/keyword-research/seed-from-conversation'
+    | '/_marketing/library/site-audit/index-bloat'
+    | '/_marketing/library/site-audit/seo-audit-report-template'
+    | '/_marketing/library/site-audit/technical-seo-audit-checklist'
+    | '/_marketing/library/competitive-analysis/'
     | '/_marketing/library/keyword-research/'
+    | '/_marketing/library/site-audit/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -639,6 +770,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/backlink-check'
       preLoaderRoute: typeof ApiBacklinkCheckRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_marketing/support': {
+      id: '/_marketing/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof MarketingSupportRouteImport
+      parentRoute: typeof MarketingRoute
     }
     '/_marketing/roadmap': {
       id: '/_marketing/roadmap'
@@ -759,11 +897,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingFeaturesAiBrandVisibilityRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/library/site-audit/': {
+      id: '/_marketing/library/site-audit/'
+      path: '/library/site-audit'
+      fullPath: '/library/site-audit/'
+      preLoaderRoute: typeof MarketingLibrarySiteAuditIndexRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/library/keyword-research/': {
       id: '/_marketing/library/keyword-research/'
       path: '/library/keyword-research'
       fullPath: '/library/keyword-research/'
       preLoaderRoute: typeof MarketingLibraryKeywordResearchIndexRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/competitive-analysis/': {
+      id: '/_marketing/library/competitive-analysis/'
+      path: '/library/competitive-analysis'
+      fullPath: '/library/competitive-analysis/'
+      preLoaderRoute: typeof MarketingLibraryCompetitiveAnalysisIndexRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/site-audit/technical-seo-audit-checklist': {
+      id: '/_marketing/library/site-audit/technical-seo-audit-checklist'
+      path: '/library/site-audit/technical-seo-audit-checklist'
+      fullPath: '/library/site-audit/technical-seo-audit-checklist'
+      preLoaderRoute: typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/site-audit/seo-audit-report-template': {
+      id: '/_marketing/library/site-audit/seo-audit-report-template'
+      path: '/library/site-audit/seo-audit-report-template'
+      fullPath: '/library/site-audit/seo-audit-report-template'
+      preLoaderRoute: typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/site-audit/index-bloat': {
+      id: '/_marketing/library/site-audit/index-bloat'
+      path: '/library/site-audit/index-bloat'
+      fullPath: '/library/site-audit/index-bloat'
+      preLoaderRoute: typeof MarketingLibrarySiteAuditIndexBloatRouteImport
       parentRoute: typeof MarketingRoute
     }
     '/_marketing/library/keyword-research/seed-from-conversation': {
@@ -822,6 +995,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingLibraryKeywordResearchClusterTopicalHubsRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/library/competitive-analysis/keyword-gap-analysis': {
+      id: '/_marketing/library/competitive-analysis/keyword-gap-analysis'
+      path: '/library/competitive-analysis/keyword-gap-analysis'
+      fullPath: '/library/competitive-analysis/keyword-gap-analysis'
+      preLoaderRoute: typeof MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/competitive-analysis/find-your-real-competitors': {
+      id: '/_marketing/library/competitive-analysis/find-your-real-competitors'
+      path: '/library/competitive-analysis/find-your-real-competitors'
+      fullPath: '/library/competitive-analysis/find-your-real-competitors'
+      preLoaderRoute: typeof MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/competitive-analysis/competitor-traffic-estimates': {
+      id: '/_marketing/library/competitive-analysis/competitor-traffic-estimates'
+      path: '/library/competitive-analysis/competitor-traffic-estimates'
+      fullPath: '/library/competitive-analysis/competitor-traffic-estimates'
+      preLoaderRoute: typeof MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/competitive-analysis/backlink-gap-analysis': {
+      id: '/_marketing/library/competitive-analysis/backlink-gap-analysis'
+      path: '/library/competitive-analysis/backlink-gap-analysis'
+      fullPath: '/library/competitive-analysis/backlink-gap-analysis'
+      preLoaderRoute: typeof MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRouteImport
+      parentRoute: typeof MarketingRoute
+    }
   }
 }
 
@@ -831,6 +1032,7 @@ interface MarketingRouteChildren {
   MarketingOpenSourceSeoRoute: typeof MarketingOpenSourceSeoRoute
   MarketingPricingRoute: typeof MarketingPricingRoute
   MarketingRoadmapRoute: typeof MarketingRoadmapRoute
+  MarketingSupportRoute: typeof MarketingSupportRoute
   MarketingIndexRoute: typeof MarketingIndexRoute
   MarketingFeaturesAiBrandVisibilityRoute: typeof MarketingFeaturesAiBrandVisibilityRoute
   MarketingFeaturesAiSearchPromptsRoute: typeof MarketingFeaturesAiSearchPromptsRoute
@@ -844,6 +1046,10 @@ interface MarketingRouteChildren {
   MarketingFeaturesSiteAuditRoute: typeof MarketingFeaturesSiteAuditRoute
   MarketingFeaturesIndexRoute: typeof MarketingFeaturesIndexRoute
   MarketingLibraryIndexRoute: typeof MarketingLibraryIndexRoute
+  MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute: typeof MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute
+  MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute: typeof MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute
+  MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute: typeof MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute
+  MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRoute: typeof MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRoute
   MarketingLibraryKeywordResearchClusterTopicalHubsRoute: typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute: typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   MarketingLibraryKeywordResearchIntentBeyondGoogleRoute: typeof MarketingLibraryKeywordResearchIntentBeyondGoogleRoute
@@ -852,7 +1058,12 @@ interface MarketingRouteChildren {
   MarketingLibraryKeywordResearchPositioningToDemandRoute: typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   MarketingLibraryKeywordResearchSearchIntentMappingRoute: typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   MarketingLibraryKeywordResearchSeedFromConversationRoute: typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  MarketingLibrarySiteAuditIndexBloatRoute: typeof MarketingLibrarySiteAuditIndexBloatRoute
+  MarketingLibrarySiteAuditSeoAuditReportTemplateRoute: typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
+  MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute: typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  MarketingLibraryCompetitiveAnalysisIndexRoute: typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   MarketingLibraryKeywordResearchIndexRoute: typeof MarketingLibraryKeywordResearchIndexRoute
+  MarketingLibrarySiteAuditIndexRoute: typeof MarketingLibrarySiteAuditIndexRoute
 }
 
 const MarketingRouteChildren: MarketingRouteChildren = {
@@ -861,6 +1072,7 @@ const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingOpenSourceSeoRoute: MarketingOpenSourceSeoRoute,
   MarketingPricingRoute: MarketingPricingRoute,
   MarketingRoadmapRoute: MarketingRoadmapRoute,
+  MarketingSupportRoute: MarketingSupportRoute,
   MarketingIndexRoute: MarketingIndexRoute,
   MarketingFeaturesAiBrandVisibilityRoute:
     MarketingFeaturesAiBrandVisibilityRoute,
@@ -875,6 +1087,14 @@ const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingFeaturesSiteAuditRoute: MarketingFeaturesSiteAuditRoute,
   MarketingFeaturesIndexRoute: MarketingFeaturesIndexRoute,
   MarketingLibraryIndexRoute: MarketingLibraryIndexRoute,
+  MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute:
+    MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute,
+  MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute:
+    MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute,
+  MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute:
+    MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute,
+  MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRoute:
+    MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRoute,
   MarketingLibraryKeywordResearchClusterTopicalHubsRoute:
     MarketingLibraryKeywordResearchClusterTopicalHubsRoute,
   MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute:
@@ -891,8 +1111,17 @@ const MarketingRouteChildren: MarketingRouteChildren = {
     MarketingLibraryKeywordResearchSearchIntentMappingRoute,
   MarketingLibraryKeywordResearchSeedFromConversationRoute:
     MarketingLibraryKeywordResearchSeedFromConversationRoute,
+  MarketingLibrarySiteAuditIndexBloatRoute:
+    MarketingLibrarySiteAuditIndexBloatRoute,
+  MarketingLibrarySiteAuditSeoAuditReportTemplateRoute:
+    MarketingLibrarySiteAuditSeoAuditReportTemplateRoute,
+  MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute:
+    MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute,
+  MarketingLibraryCompetitiveAnalysisIndexRoute:
+    MarketingLibraryCompetitiveAnalysisIndexRoute,
   MarketingLibraryKeywordResearchIndexRoute:
     MarketingLibraryKeywordResearchIndexRoute,
+  MarketingLibrarySiteAuditIndexRoute: MarketingLibrarySiteAuditIndexRoute,
 }
 
 const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
