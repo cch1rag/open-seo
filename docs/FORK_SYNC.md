@@ -77,6 +77,9 @@ pnpm ci:check && pnpm test:ci
 - **Deleting an upstream-orphaned export cascades.** Removing a function whose
   only caller upstream deleted tends to orphan its helpers and their imports
   in turn. Re-run `knip` and `oxlint` together after each removal.
+- **Every `gh` command needs `--repo cch1rag/open-seo`.** In this checkout `gh`
+  resolves to `every-app/open-seo`, so a bare `gh pr create` targets the public
+  upstream repository rather than the fork.
 - **Don't `git add -A` during a merge** without checking for untracked local
   tool state (`.serena/`, `.worktrees/`).
 - The merge output is dense; read conflicted regions with a plain file read.
