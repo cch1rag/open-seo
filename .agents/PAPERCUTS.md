@@ -10,6 +10,7 @@ data, or sensitive paths.
 
 ## Open
 
+- [ ] `2026-09-18T07:20:00Z` — `claude` — `pnpm ci:check` fails its last gate (`test -z "$(git status --porcelain -- plugins/openseo/skills)"`) whenever the synced plugin skills are staged but not yet committed, exiting 1 with no message explaining why. Running the checks before committing is the natural order, so this costs a confused re-run every time. Print an error naming the uncommitted paths, or document that `ci:check` runs against a committed tree.
 - [ ] `2026-09-03T00:00:00Z` — `claude` — `pnpm ci:check` does not run `pnpm build`, so a route file that pulls `cloudflare:workers` into the client bundle passes every check and still breaks the build (hit on the dynamic-reports branch). Add a build step to `ci:check`, or document that `pnpm build` must be run separately before opening a PR.
 - [ ] `2026-09-11T00:13:05Z` — `codex` — The web-content review skill points to the removed `src/server/features/onboarding/openseo-fact-sheet.md`; the reference now lives at `src/server/features/sam/openseo-fact-sheet.md`. Update the skill's pointer so content reviews reach the current fact sheet.
 
