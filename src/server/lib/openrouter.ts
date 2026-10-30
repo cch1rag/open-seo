@@ -168,6 +168,9 @@ export function getChatAgentModelSync(
     name: "openai-compatible",
     apiKey: configuration.apiKey,
     baseURL: configuration.baseUrl,
+    // Without this the JSON schema is never sent, so research and prompt
+    // suggestions get free-form JSON that fails their schema.
+    supportsStructuredOutputs: true,
   })(configuration.modelId);
 }
 

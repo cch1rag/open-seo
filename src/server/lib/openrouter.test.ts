@@ -209,6 +209,7 @@ describe("requireServerChatAgent", () => {
       AI_MODEL: "deployment-name",
     });
     expect(agent.model.provider).toBe("openai-compatible.chat");
+    expect(agent.model).toMatchObject({ supportsStructuredOutputs: true });
     expect(agent.stepCostUsd({})).toBe(0);
   });
 
