@@ -189,3 +189,35 @@ describe("getChatAgentSetupStatus", () => {
     expect(status.errorMessage).toContain("Unsupported AI_PROVIDER");
   });
 });
+
+describe("requireServerChatAgent", () => {
+  async function agentFor(env: Record<string, string>) {
+    vi.doMock("@/server/lib/runtime-env", async (importOriginal) => ({
+      ...(await importOriginal<object>()),
+      getWorkersEnv: async () => env,
+    }));
+    const { requireServerChatAgent } = await import("./openrouter");
+    return requireServerChatAgent("low");
+  }
+
+  it("uses the compatible provider and bills nothing when AI_PROVIDER is set", async () => {
+    const agent = await agentFor({
+      AUTH_MODE: "local_noauth",
+      AI_PROVIDER: "openai-compatible",
+      AI_API_KEY: "provider-key",
+      AI_BASE_URL: "https://example.test/openai/v1",
+      AI_MODEL: "deployment-name",
+    });
+    expect(agent.model.provider).toBe("openai-compatible.chat");
+    expect(agent.stepCostUsd({})).toBe(0);
+  });
+
+  it("keeps OpenRouter's strict cost reading without AI_PROVIDER", async () => {
+    const agent = await agentFor({ OPENROUTER_API_KEY: "router-key" });
+    expect(agent.model.provider).toContain("openrouter");
+    expect(agent.stepCostUsd({ openrouter: { usage: { cost: 0.5 } } })).toBe(
+      0.5,
+    );
+    expect(() => agent.stepCostUsd({})).toThrow();
+  });
+});

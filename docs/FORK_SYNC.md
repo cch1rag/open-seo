@@ -8,19 +8,27 @@ fork-only — upstream has no copy, so it never conflicts during a sync.
 
 ## What the fork changes
 
-Four things diverge from upstream. Everything else should be taken from
+Five things diverge from upstream. Everything else should be taken from
 upstream wholesale.
 
 1. **Self-hosted OpenAI-compatible AI provider** (`src/server/lib/openrouter.ts`).
    The fork owns `resolveChatAgentConfiguration`, `getChatAgentSetupStatus`,
-   `getChatAgentModelSync`, and `buildChatAgentModelFromConfiguration`.
-   Upstream only has `buildChatAgentModel` and talks to OpenRouter directly.
+   `getChatAgentModelSync`, and `requireServerChatAgent`. Upstream only has
+   `buildChatAgentModel` and talks to OpenRouter directly.
 2. **SAM tool hardening** (`samToolPolicy.ts`, `samToolAccess.ts`,
    `samToolErrors.ts`, plus the wiring in `SamChatAgent.ts`): call and
    paid-call budgets, a per-turn abort signal, and an active-tool allowlist.
 3. **Tighter SAM budgets**: `SAM_MAX_STEPS = 24`, `SAM_MAX_OUTPUT_TOKENS = 4000`.
 4. **`compose.yaml` builds this checkout** instead of pulling the upstream
    image, and forwards `AI_*` provider values.
+5. **One-off AI calls use the same provider as SAM.** Website research,
+   prompt research and prompt suggestions call `requireServerChatAgent`, which
+   returns the model plus a `stepCostUsd` reader (OpenRouter's strict cost
+   parse, or 0 for a compatible provider, which only runs unbilled in
+   `local_noauth`). Upstream calls `buildChatAgentModel(await
+requireOpenRouterAccess(), …)` and `requireOpenRouterCostUsd` directly; any new
+   upstream caller of that pair must be switched over at sync time, along with
+   its test's `@/server/lib/openrouter` mock.
 
 ## Standing conflict resolutions
 

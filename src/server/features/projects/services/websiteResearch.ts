@@ -11,16 +11,11 @@ import {
   billResearchSpend,
   type ResearchSpend,
 } from "@/server/billing/researchSpend";
-import { requireOpenRouterCostUsd } from "@/server/lib/chatAgent";
 import { fetchLiveSerp } from "@/server/lib/dataforseo/serp";
 import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
 import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 import { AppError } from "@/server/lib/errors";
-import {
-  buildChatAgentModel,
-  requireOpenRouterAccess,
-} from "@/server/lib/openrouter";
-import { getOptionalEnvValue } from "@/server/lib/runtime-env";
+import { requireServerChatAgent } from "@/server/lib/openrouter";
 import { readSite } from "@/server/lib/scrape";
 import {
   CONTEXT_USD_PER_CREDIT,
@@ -158,6 +153,7 @@ export async function researchWebsite(
       : null;
     if (site && site.pages.length === 0)
       throw new AppError("VALIDATION_ERROR", WEBSITE_UNREADABLE_MESSAGE);
+    const chatAgent = await requireServerChatAgent("low");
     const result = await retryInvalidOutput(async (abortSignal) => {
       // Each attempt is a new conversation: fresh tool budgets and evidence.
       let searched = false;
@@ -166,11 +162,7 @@ export async function researchWebsite(
       searchOutage = false;
       sources.clear();
       return generateText({
-        model: buildChatAgentModel(
-          await requireOpenRouterAccess(),
-          await getOptionalEnvValue("OPENROUTER_MODEL"),
-          "low",
-        ),
+        model: chatAgent.model,
         output: Output.object({
           schema: outputSchema,
         }),
@@ -332,7 +324,7 @@ export async function researchWebsite(
           spend.push({
             provider: "openrouter",
             creditFeature: "agent",
-            costUsd: requireOpenRouterCostUsd(step.providerMetadata),
+            costUsd: chatAgent.stepCostUsd(step.providerMetadata),
             operation: "project_website_research",
           });
         },

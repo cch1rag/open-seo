@@ -31,11 +31,10 @@ vi.mock("@/server/lib/runtime-env", () => ({
   getOptionalEnvValue: vi.fn(),
 }));
 vi.mock("@/server/lib/openrouter", () => ({
-  buildChatAgentModel: vi.fn(),
-  requireOpenRouterAccess: vi.fn(async () => ({ apiKey: "test-key" })),
-}));
-vi.mock("@/server/lib/chatAgent", () => ({
-  requireOpenRouterCostUsd: vi.fn(),
+  requireServerChatAgent: vi.fn(async () => ({
+    model: undefined,
+    stepCostUsd: vi.fn(),
+  })),
 }));
 vi.mock("@/server/billing/researchSpend", () => ({
   billResearchSpend: vi.fn(),

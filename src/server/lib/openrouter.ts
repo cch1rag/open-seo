@@ -7,6 +7,7 @@ import {
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { wrapLanguageModel } from "ai";
 import { isEveryAppAuthMode } from "@/lib/auth-mode";
+import { requireOpenRouterCostUsd } from "@/server/lib/chatAgent";
 import { gatewayCallFor } from "@/server/lib/gateway-attribution";
 import { getEnvValueSync, getWorkersEnv } from "@/server/lib/runtime-env";
 
@@ -16,9 +17,7 @@ import { getEnvValueSync, getWorkersEnv } from "@/server/lib/runtime-env";
  * holds the key. The proxy's host is a placeholder the binding never
  * resolves.
  */
-export type OpenRouterAccess =
-  | { apiKey: string }
-  | { gatewayFetch: typeof fetch };
+type OpenRouterAccess = { apiKey: string } | { gatewayFetch: typeof fetch };
 
 const GATEWAY_BASE_URL =
   "https://every-app-gateway.invalid/api/ai/openrouter/api/v1";
@@ -172,6 +171,36 @@ export function getChatAgentModelSync(
   })(configuration.modelId);
 }
 
+/**
+ * A one-off server-side model call (website research, prompt research and
+ * suggestions): the same provider SAM uses, plus how to read each step's USD
+ * cost. Compatible providers run only in local_noauth, which bills nothing.
+ */
+export type ServerChatAgent = {
+  model: LanguageModelV3;
+  stepCostUsd: (providerMetadata: unknown) => number;
+};
+
+export async function requireServerChatAgent(
+  reasoningEffort: "max" | "low",
+): Promise<ServerChatAgent> {
+  const env = (await getWorkersEnv()) ?? {};
+  if (getEnvValueSync(env, "AI_PROVIDER")) {
+    return {
+      model: getChatAgentModelSync(env, reasoningEffort),
+      stepCostUsd: () => 0,
+    };
+  }
+  return {
+    model: buildChatAgentModel(
+      await requireOpenRouterAccess(),
+      getEnvValueSync(env, "OPENROUTER_MODEL"),
+      reasoningEffort,
+    ),
+    stepCostUsd: requireOpenRouterCostUsd,
+  };
+}
+
 function getRequiredConfigurationValue(
   env: Record<string, string | undefined>,
   name: string,
@@ -184,7 +213,7 @@ function getRequiredConfigurationValue(
 }
 
 /** For server code: the access, or the error a missing key always threw. */
-export async function requireOpenRouterAccess(): Promise<OpenRouterAccess> {
+async function requireOpenRouterAccess(): Promise<OpenRouterAccess> {
   const access = getOpenRouterAccess((await getWorkersEnv()) ?? {});
   if (!access) {
     throw new Error(

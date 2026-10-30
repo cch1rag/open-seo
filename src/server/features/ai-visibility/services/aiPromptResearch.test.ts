@@ -29,11 +29,10 @@ vi.mock("ai", () => ({
   Output: { object: (value: unknown) => value },
 }));
 vi.mock("@/server/lib/openrouter", () => ({
-  buildChatAgentModel: vi.fn(),
-  requireOpenRouterAccess: async () => ({ apiKey: "key" }),
-}));
-vi.mock("@/server/lib/chatAgent", () => ({
-  requireOpenRouterCostUsd: () => 0.003,
+  requireServerChatAgent: async () => ({
+    model: undefined,
+    stepCostUsd: () => 0.003,
+  }),
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
   getRequiredEnvValue: async () => "key",
