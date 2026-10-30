@@ -21,7 +21,6 @@ describe("buildSamMcpTools", () => {
         userEmail: "user@example.test",
         organizationId: "org-1",
         role: "owner",
-        orgScope: "pinned",
         clientId: null,
         scopes: [],
         baseUrl: "https://app.example.test",

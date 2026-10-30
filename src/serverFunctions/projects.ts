@@ -1,3 +1,5 @@
+import { waitUntil } from "cloudflare:workers";
+import { DashboardFirstAuditService } from "@/server/features/dashboard/services/DashboardFirstAuditService";
 import { createServerFn } from "@tanstack/react-start";
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
@@ -27,15 +29,56 @@ export const createProject = createServerFn({ method: "POST" })
   .validator(createProjectSchema)
   .handler(async ({ data, context }) => {
     requireOrgPermission(context, { project: ["create"] });
-    return ProjectService.createProject(context.organizationId, data);
+    const project = await ProjectService.createProject(
+      context.organizationId,
+      data,
+    );
+    const initialAudit = await DashboardFirstAuditService.start(
+      project.id,
+      project.domain,
+      { ...context, projectId: project.id },
+    );
+    return { ...project, initialAudit };
   });
 
 export const updateProject = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(updateProjectSchema)
-  .handler(async ({ data, context }) =>
-    ProjectService.updateProject(context.organizationId, data),
-  );
+  .handler(async ({ data, context }) => {
+    const project = await ProjectService.updateProject(
+      context.organizationId,
+      data,
+    );
+    const initialAudit =
+      project.domain !== context.project.domain
+        ? await DashboardFirstAuditService.start(
+            project.id,
+            project.domain,
+            context,
+          )
+        : null;
+    return { ...project, initialAudit };
+  });
+
+// Onboarding's website step. Starting the first audit checks DNS and probes
+// the site, which takes seconds on a slow host, so it runs after the response
+// and the wizard moves on at once. start() skips projects that already have an
+// audit and logs its own failures.
+export const saveOnboardingWebsite = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(setProjectWebsiteSchema)
+  .handler(async ({ data, context }) => {
+    const project = await ProjectService.updateProject(context.organizationId, {
+      ...data,
+      // Name the auto-created project after the site it now tracks.
+      name:
+        context.project.name === "Default" ? data.domain : context.project.name,
+    });
+    waitUntil(
+      DashboardFirstAuditService.start(project.id, project.domain, context),
+    );
+    return project;
+  });
 
 export const archiveProject = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
@@ -68,10 +111,3 @@ export const getProjectAccess = createServerFn({ method: "POST" })
       data.projectId,
     );
   });
-
-export const setProjectWebsite = createServerFn({ method: "POST" })
-  .middleware(requireProjectContext)
-  .validator(setProjectWebsiteSchema)
-  .handler(({ data, context }) =>
-    ProjectService.setProjectWebsite(context.organizationId, data),
-  );

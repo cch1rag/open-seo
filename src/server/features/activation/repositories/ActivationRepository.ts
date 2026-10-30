@@ -6,9 +6,13 @@ import {
   invitation,
   organizationActivationState,
   projectActivationState,
+  userOnboardingAnswers,
 } from "@/db/schema";
 
-import type { DashboardSetupStep } from "@/types/schemas/dashboard";
+import type {
+  DashboardClickStep,
+  DashboardSetupStep,
+} from "@/types/schemas/dashboard";
 
 type OrganizationActivationState =
   typeof organizationActivationState.$inferSelect;
@@ -66,15 +70,47 @@ async function recordFirstMcpToolCall(organizationId: string): Promise<void> {
     });
 }
 
-async function markCompetitorStepClicked(projectId: string): Promise<void> {
+// An agent that creates a project through MCP has done the wizard's main job,
+// so the app stops sending the user to onboarding. COALESCE keeps an earlier
+// completion. The Search Console nudge stays pending: the user never saw that
+// step. Returns whether this call completed onboarding.
+async function markOnboardingCompleted(
+  userId: string,
+  organizationId: string,
+): Promise<boolean> {
   const now = new Date().toISOString();
+  const [row] = await db
+    .insert(userOnboardingAnswers)
+    .values({ userId, organizationId, completedAt: now, updatedAt: now })
+    .onConflictDoUpdate({
+      target: userOnboardingAnswers.userId,
+      set: {
+        completedAt: sql`coalesce(${userOnboardingAnswers.completedAt}, ${now})`,
+        updatedAt: now,
+      },
+    })
+    .returning({ completedAt: userOnboardingAnswers.completedAt });
+  return row?.completedAt === now;
+}
+
+const clickStepColumns = {
+  competitor: "competitorStepClickedAt",
+  keywords: "keywordStepClickedAt",
+} as const satisfies Record<DashboardClickStep, keyof ProjectActivationState>;
+
+async function markStepClicked(
+  projectId: string,
+  step: DashboardClickStep,
+): Promise<void> {
+  const now = new Date().toISOString();
+  const key = clickStepColumns[step];
   await db
     .insert(projectActivationState)
-    .values({ projectId, competitorStepClickedAt: now, updatedAt: now })
+    .values({ projectId, [key]: now, updatedAt: now })
     .onConflictDoUpdate({
       target: projectActivationState.projectId,
       set: {
-        competitorStepClickedAt: sql`coalesce(${projectActivationState.competitorStepClickedAt}, ${now})`,
+        [key]: sql`coalesce(${projectActivationState[key]}, ${now})`,
         updatedAt: now,
       },
     });
@@ -167,6 +203,7 @@ export const ActivationRepository = {
   getProjectActivation,
   recordFirstMcpAuthorized,
   recordFirstMcpToolCall,
-  markCompetitorStepClicked,
+  markOnboardingCompleted,
+  markStepClicked,
   markGa4CardDismissed,
 };

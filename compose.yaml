@@ -6,7 +6,7 @@ services:
     image: ${OPEN_SEO_IMAGE:-open-seo:local}
     build:
       context: .
-      dockerfile: Dockerfile.selfhost
+      dockerfile: deploy/docker/Dockerfile
     pull_policy: ${OPEN_SEO_PULL_POLICY:-build}
     restart: unless-stopped
     # Forward EVERY .env value into the container, including OPENROUTER_* and
@@ -17,7 +17,7 @@ services:
     # `cp .env.example .env` creates it.
     env_file:
       - .env
-    # Anonymous usage heartbeat controls: docs/SELF_HOSTING_DOCKER.md#telemetry
+    # Anonymous usage heartbeat controls: docs/SELF_HOSTING_DOCKER_LEGACY.md#telemetry
     environment:
       # Required for local Docker self-hosting: exposes Compose env vars to cloudflare:workers bindings.
       - CLOUDFLARE_INCLUDE_PROCESS_ENV=true

@@ -4,6 +4,10 @@
 // client.ts.
 
 export { createDataforseoClient } from "@/server/lib/dataforseo/client";
+export {
+  AI_TRACKING_HOLD_TTL_MS,
+  type AiTrackingHold,
+} from "@/server/lib/dataforseo/ai-tracking-billing";
 
 export {
   fetchKeywordMetricsForList,
@@ -26,7 +30,15 @@ export { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget
 // at DataForSEO (the task was charged at task_post), so routing these through
 // the metering seam would charge the customer twice; business categories are
 // free ($0), so a zero-credit org can still list them.
-export { fetchRankCheckTaskResult } from "@/server/lib/dataforseo/serp";
+export {
+  fetchLocalSerpTaskResult,
+  fetchRankCheckTaskResult,
+} from "@/server/lib/dataforseo/serp";
+export {
+  fetchAiTrackingTaskResult,
+  type AiTrackingAnswer,
+  type PostedAiTrackingTask,
+} from "@/server/lib/dataforseo/ai-tracking";
 export {
   fetchBusinessDataTaskResult,
   fetchBusinessListingsCategories,
@@ -43,6 +55,7 @@ export type {
 export type { AdsKeywordIdeaItem } from "@/server/lib/dataforseo/google-ads";
 
 export type {
+  LocalSerpTaskOutcome,
   SerpLiveItem,
   RankCheckResult,
   RankCheckTaskInput,
