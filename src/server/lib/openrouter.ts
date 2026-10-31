@@ -217,10 +217,31 @@ export function getChatAgentModelSync(
     name: configuration.provider,
     apiKey: configuration.apiKey,
     baseURL: configuration.baseUrl,
+    fetch: vpcServiceFetch(env),
     // Without this the JSON schema is never sent, so research and prompt
     // suggestions get free-form JSON that fails their schema.
     supportsStructuredOutputs: true,
   })(configuration.modelId);
+}
+
+/**
+ * Requests through the AI_VPC_SERVICE binding when the deploy set one: a
+ * Workers VPC service reaching a provider on a private network (a local
+ * omniroute behind Cloudflare Tunnel), so it needs no public address. The
+ * service fixes host and port; the URL only supplies the path and Host header.
+ */
+function vpcServiceFetch(env: object): typeof fetch | undefined {
+  const binding: unknown = Reflect.get(env, "AI_VPC_SERVICE");
+  if (!isFetcher(binding)) return undefined;
+  return (input, init) => binding.fetch(input, init);
+}
+
+function isFetcher(value: unknown): value is { fetch: typeof fetch } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof Reflect.get(value, "fetch") === "function"
+  );
 }
 
 /**

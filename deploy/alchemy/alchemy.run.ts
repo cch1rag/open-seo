@@ -15,7 +15,7 @@ import {
   requireAllowedEmails,
   workerName,
 } from "./alchemy.access.ts";
-import { FORK_AI_SECRETS, FORK_AI_VARS } from "./forkAiEnv.ts";
+import * as forkAi from "./forkAiEnv.ts";
 
 // Preview hostnames are `open-seo-<stage>.<WORKERS_SUBDOMAIN>` — the naming
 // lives in alchemy.access.ts, shared with the Access wildcard the security
@@ -277,10 +277,7 @@ const dataEnv = {
   GOOGLE_MAPS_API_KEY: optionalSecret("GOOGLE_MAPS_API_KEY"),
   OPENROUTER_API_KEY: optionalSecret("OPENROUTER_API_KEY"),
   OPENROUTER_MODEL: optionalVar("OPENROUTER_MODEL"),
-  ...Object.fromEntries(FORK_AI_VARS.map((name) => [name, optionalVar(name)])),
-  ...Object.fromEntries(
-    FORK_AI_SECRETS.map((name) => [name, optionalSecret(name)]),
-  ),
+  ...forkAi.forkAiEnv(optionalVar, optionalSecret),
   CONTEXT_API_KEY: optionalSecret("CONTEXT_API_KEY"),
   AUTUMN_SECRET_KEY: optionalSecret("AUTUMN_SECRET_KEY"),
   AUTUMN_WEBHOOK_SECRET: optionalSecret("AUTUMN_WEBHOOK_SECRET"),
@@ -584,6 +581,8 @@ export default Alchemy.Stack(
     if (prod) {
       yield* app.bind("hyperdrive", hyperdriveBinding(hyperdriveId));
     }
+    const aiVpc = yield* optionalVar(forkAi.AI_VPC_SERVICE_ID);
+    if (aiVpc) yield* app.bind("ai-vpc-service", forkAi.vpcBinding(aiVpc));
 
     return { url: app.url.as<string>() };
   }),

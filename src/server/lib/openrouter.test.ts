@@ -207,6 +207,27 @@ describe("resolveChatAgentConfiguration", () => {
     );
   });
 
+  it("sends compatible-provider calls through the AI_VPC_SERVICE binding", async () => {
+    const vpcFetch = vi.fn(async () => completion());
+    const globalFetch = vi.spyOn(globalThis, "fetch");
+    const result = await generateText({
+      model: getChatAgentModelSync({
+        AI_PROVIDER: "openai-compatible",
+        AI_API_KEY: "provider-key",
+        AI_BASE_URL: "http://omniroute/v1",
+        AI_MODEL: "general-direct",
+        AI_VPC_SERVICE: { fetch: vpcFetch },
+      }),
+      prompt: "hi",
+    });
+    expect(result.text).toBe("ok");
+    expect(vpcFetch).toHaveBeenCalledWith(
+      "http://omniroute/v1/chat/completions",
+      expect.anything(),
+    );
+    expect(globalFetch).not.toHaveBeenCalled();
+  });
+
   it("builds each own provider's model", () => {
     expect(
       getChatAgentModelSync({

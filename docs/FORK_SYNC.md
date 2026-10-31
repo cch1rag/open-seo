@@ -13,7 +13,9 @@ upstream wholesale.
 
 1. **Your own AI provider** (`anthropic`, `openai` or any OpenAI-compatible
    endpoint, picked by `AI_PROVIDER`; refused only on hosted OpenSEO; passed
-   through by `deploy/alchemy/alchemy.run.ts` for the Cloudflare self-host) (`src/server/lib/openrouter.ts`).
+   through by `deploy/alchemy/alchemy.run.ts` for the Cloudflare self-host);
+   an `AI_VPC_SERVICE_ID` binds a Workers VPC service as `AI_VPC_SERVICE`, and
+   openai-compatible calls go through it (`deploy/alchemy/forkAiEnv.ts`) (`src/server/lib/openrouter.ts`).
    The fork owns `resolveChatAgentConfiguration`, `getChatAgentSetupStatus`,
    `getChatAgentModelSync`, and `requireServerChatAgent`. Upstream only has
    `buildChatAgentModel` and talks to OpenRouter directly.

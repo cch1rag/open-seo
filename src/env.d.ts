@@ -122,8 +122,10 @@ declare namespace Cloudflare {
     // Optional OpenRouter model slug override (defaults in openrouter.ts).
     OPENROUTER_MODEL?: string;
 
-    // Self-hosted OpenAI-compatible provider settings (local_noauth only).
-    AI_PROVIDER?: "openai-compatible";
+    // Fork: your own AI provider (see docs/FORK_SYNC.md).
+    AI_PROVIDER?: "anthropic" | "openai" | "openai-compatible";
+    // Workers VPC service reaching a private openai-compatible provider.
+    AI_VPC_SERVICE?: { fetch: typeof fetch };
     AI_API_KEY?: string;
     AI_BASE_URL?: string;
     AI_MODEL?: string;
