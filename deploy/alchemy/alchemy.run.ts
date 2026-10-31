@@ -15,7 +15,7 @@ import {
   requireAllowedEmails,
   workerName,
 } from "./alchemy.access.ts";
-import { FORK_AI_SECRETS, FORK_AI_VARS } from "./forkAiEnv";
+import { FORK_AI_SECRETS, FORK_AI_VARS } from "./forkAiEnv.ts";
 
 // Preview hostnames are `open-seo-<stage>.<WORKERS_SUBDOMAIN>` — the naming
 // lives in alchemy.access.ts, shared with the Access wildcard the security
