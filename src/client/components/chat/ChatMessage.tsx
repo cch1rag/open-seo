@@ -19,6 +19,7 @@ import {
 import { Spinner } from "@/client/components/ui/spinner";
 import { Textarea } from "@/client/components/ui/textarea";
 import { getPendingToolApprovalId } from "./toolApproval";
+import { servedModelOf } from "@/shared/servedModel";
 
 // Turn a tool part type ("tool-get_serp_results") into a readable label
 // ("Get serp results"). SAM exposes the full MCP tool surface, too many tools
@@ -223,6 +224,7 @@ export function ChatMessage({
   onToolApproval?: (approvalId: string, approved: boolean) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const servedModel = servedModelOf(message);
   const [draft, setDraft] = useState("");
 
   if (message.role === "user") {
@@ -320,6 +322,9 @@ export function ChatMessage({
           return null;
         })}
       </div>
+      {servedModel && !streaming ? (
+        <p className="text-xs text-muted-foreground">{servedModel}</p>
+      ) : null}
       {streaming ? null : <MessageActions message={message} />}
     </div>
   );

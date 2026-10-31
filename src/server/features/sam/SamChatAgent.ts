@@ -29,10 +29,8 @@ import {
   buildSoulPrompt,
   renderProjectContext,
 } from "@/server/features/sam/samContextBlocks";
-import {
-  deriveTitle,
-  firstUserText,
-} from "@/server/features/sam/samSessionTitle";
+import * as samTitle from "@/server/features/sam/samSessionTitle";
+import { recordServedModel } from "@/server/features/sam/samServedModel";
 import { buildSamSkillSource } from "@/server/features/sam/samSkills";
 import { getSamActiveToolNames } from "@/server/features/sam/samToolAccess";
 import { SamToolPolicy } from "@/server/features/sam/samToolPolicy";
@@ -441,6 +439,7 @@ export class SamChatAgent extends Think {
 
   async onChatResponse(result: ChatResponseResult): Promise<void> {
     this.flushSpend();
+    await recordServedModel(this, result.message, this.telemetry.turn);
     this.ctx.waitUntil(
       this.telemetry.report(
         result.status,
@@ -456,7 +455,9 @@ export class SamChatAgent extends Think {
 
       // Name the session from its first message so the side-panel is readable.
       if (ctx.row.title === "New chat") {
-        const title = deriveTitle(firstUserText(this.messages));
+        const title = samTitle.deriveTitle(
+          samTitle.firstUserText(this.messages),
+        );
         if (title !== "New chat") {
           await SamSessionRepository.setTitle(ctx.row.id, title);
           ctx.row.title = title;

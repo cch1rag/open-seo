@@ -9,6 +9,7 @@ import { wrapLanguageModel } from "ai";
 import { isEveryAppAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
 import { requireOpenRouterCostUsd } from "@/server/lib/chatAgent";
 import { gatewayCallFor } from "@/server/lib/gateway-attribution";
+import { dropKeepaliveChunks } from "@/server/lib/keepaliveFilter";
 import { getEnvValueSync, getWorkersEnv } from "@/server/lib/runtime-env";
 
 /**
@@ -217,7 +218,9 @@ export function getChatAgentModelSync(
     name: configuration.provider,
     apiKey: configuration.apiKey,
     baseURL: configuration.baseUrl,
-    fetch: vpcServiceFetch(env),
+    fetch: dropKeepaliveChunks(
+      vpcServiceFetch(env) ?? ((input, init) => fetch(input, init)),
+    ),
     // Without this the JSON schema is never sent, so research and prompt
     // suggestions get free-form JSON that fails their schema.
     supportsStructuredOutputs: true,
