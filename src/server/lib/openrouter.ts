@@ -4,7 +4,6 @@ import {
   type LanguageModelV3,
   type OpenRouterProvider,
 } from "@openrouter/ai-sdk-provider";
-import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { wrapLanguageModel } from "ai";
 import { isEveryAppAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
@@ -212,9 +211,7 @@ export function getChatAgentModelSync(
     throw new Error("Unreachable: AI_PROVIDER resolved to OpenRouter.");
   }
   if (configuration.provider === "anthropic") {
-    return createAnthropic({ apiKey: configuration.apiKey })(
-      configuration.modelId,
-    );
+    return lazyAnthropicModel(configuration.apiKey, configuration.modelId);
   }
   return createOpenAICompatible({
     name: configuration.provider,
@@ -224,6 +221,27 @@ export function getChatAgentModelSync(
     // suggestions get free-form JSON that fails their schema.
     supportsStructuredOutputs: true,
   })(configuration.modelId);
+}
+
+/**
+ * The Anthropic model, with @ai-sdk/anthropic imported on the first call: the
+ * lean-worker-bundle build keeps that package out of the eager startup graph
+ * (vite-plugin-lean-worker-bundle.ts), and getModel() is sync.
+ */
+function lazyAnthropicModel(apiKey: string, modelId: string): LanguageModelV3 {
+  let model: Promise<LanguageModelV3> | undefined;
+  const load = () =>
+    (model ??= import("@ai-sdk/anthropic").then(({ createAnthropic }) =>
+      createAnthropic({ apiKey })(modelId),
+    ));
+  return {
+    specificationVersion: "v3",
+    provider: "anthropic.messages",
+    modelId,
+    supportedUrls: {},
+    doGenerate: async (options) => (await load()).doGenerate(options),
+    doStream: async (options) => (await load()).doStream(options),
+  };
 }
 
 /**

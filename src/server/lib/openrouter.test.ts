@@ -181,6 +181,32 @@ describe("resolveChatAgentConfiguration", () => {
     ).toThrow("OPENAI_MODEL");
   });
 
+  it("loads the Anthropic provider on first use and calls its Messages API", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      Response.json({
+        id: "msg_1",
+        type: "message",
+        role: "assistant",
+        model: "claude-opus-5-5",
+        content: [{ type: "text", text: "ok" }],
+        stop_reason: "end_turn",
+        stop_sequence: null,
+        usage: { input_tokens: 1, output_tokens: 1 },
+      }),
+    );
+    const result = await generateText({
+      model: getChatAgentModelSync({
+        AI_PROVIDER: "anthropic",
+        ANTHROPIC_API_KEY: "anthropic-key",
+      }),
+      prompt: "hi",
+    });
+    expect(result.text).toBe("ok");
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "https://api.anthropic.com/v1/messages",
+    );
+  });
+
   it("builds each own provider's model", () => {
     expect(
       getChatAgentModelSync({
