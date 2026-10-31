@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
-  getOptionalEnvValue,
   getWorkersEnv,
   isEveryAppServerAuthMode,
   isHostedServerAuthMode,
@@ -9,6 +8,7 @@ import {
 import {
   getChatAgentSetupStatus,
   getOpenRouterAccess,
+  readChatAgentEnv,
   type ChatAgentSetupStatus,
 } from "@/server/lib/openrouter";
 import { requireProjectContext } from "@/serverFunctions/middleware";
@@ -43,28 +43,7 @@ export const getSamAccessSetupStatus = createServerFn({ method: "GET" })
       };
     }
 
-    const [
-      authMode,
-      openRouterApiKey,
-      aiProvider,
-      aiApiKey,
-      aiBaseUrl,
-      aiModel,
-    ] = await Promise.all([
-      getOptionalEnvValue("AUTH_MODE"),
-      getOptionalEnvValue("OPENROUTER_API_KEY"),
-      getOptionalEnvValue("AI_PROVIDER"),
-      getOptionalEnvValue("AI_API_KEY"),
-      getOptionalEnvValue("AI_BASE_URL"),
-      getOptionalEnvValue("AI_MODEL"),
-    ]);
-
-    return getChatAgentSetupStatus({
-      AUTH_MODE: authMode,
-      OPENROUTER_API_KEY: openRouterApiKey,
-      AI_PROVIDER: aiProvider,
-      AI_API_KEY: aiApiKey,
-      AI_BASE_URL: aiBaseUrl,
-      AI_MODEL: aiModel,
-    });
+    return getChatAgentSetupStatus(
+      readChatAgentEnv((await getWorkersEnv()) ?? {}),
+    );
   });

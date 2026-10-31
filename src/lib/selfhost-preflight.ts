@@ -278,7 +278,7 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
             message:
               chatAgentStatus.provider === "openrouter"
                 ? "OPENROUTER_API_KEY set"
-                : "openai-compatible provider configured",
+                : `${chatAgentStatus.provider} provider configured`,
           }
         : env.AI_PROVIDER
           ? {

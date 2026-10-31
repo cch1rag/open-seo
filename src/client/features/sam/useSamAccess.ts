@@ -16,7 +16,7 @@ type SamAccess =
     }
   | {
       status: "setup";
-      provider: "openrouter" | "openai-compatible" | null;
+      provider: string | null;
       errorMessage: string | null;
       isRefetching: boolean;
       onRetry: () => void;

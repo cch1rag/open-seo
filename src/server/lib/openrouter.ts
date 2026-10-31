@@ -4,9 +4,10 @@ import {
   type LanguageModelV3,
   type OpenRouterProvider,
 } from "@openrouter/ai-sdk-provider";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { wrapLanguageModel } from "ai";
-import { isEveryAppAuthMode } from "@/lib/auth-mode";
+import { isEveryAppAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
 import { requireOpenRouterCostUsd } from "@/server/lib/chatAgent";
 import { gatewayCallFor } from "@/server/lib/gateway-attribution";
 import { getEnvValueSync, getWorkersEnv } from "@/server/lib/runtime-env";
@@ -72,17 +73,45 @@ function buildSamChatModel(
 export type ChatAgentConfiguration =
   | { provider: "openrouter"; apiKey: string; modelId?: string }
   | {
-      provider: "openai-compatible";
+      provider: "openai-compatible" | "openai";
       apiKey: string;
       baseUrl: string;
       modelId: string;
-    };
+    }
+  | { provider: "anthropic"; apiKey: string; modelId: string };
 
 export type ChatAgentSetupStatus = {
   enabled: boolean;
   provider: ChatAgentConfiguration["provider"] | null;
   errorMessage: string | null;
 };
+
+const OWN_PROVIDERS = ["anthropic", "openai", "openai-compatible"] as const;
+const DEFAULT_ANTHROPIC_MODEL = "claude-opus-5-5";
+const OPENAI_BASE_URL = "https://api.openai.com/v1";
+
+// Every env value the provider choice reads, so callers can pass a snapshot.
+const CHAT_AGENT_ENV_NAMES = [
+  "AUTH_MODE",
+  "OPENROUTER_API_KEY",
+  "OPENROUTER_MODEL",
+  "AI_PROVIDER",
+  "AI_API_KEY",
+  "AI_BASE_URL",
+  "AI_MODEL",
+  "ANTHROPIC_API_KEY",
+  "ANTHROPIC_MODEL",
+  "OPENAI_API_KEY",
+  "OPENAI_MODEL",
+] as const;
+
+export function readChatAgentEnv(
+  env: object,
+): Record<string, string | undefined> {
+  return Object.fromEntries(
+    CHAT_AGENT_ENV_NAMES.map((name) => [name, getEnvValueSync(env, name)]),
+  );
+}
 
 export function resolveChatAgentConfiguration(
   env: Record<string, string | undefined>,
@@ -98,24 +127,46 @@ export function resolveChatAgentConfiguration(
     };
   }
 
-  if (provider !== "openai-compatible") {
+  if (!isOwnProvider(provider)) {
     throw new Error(
-      "Unsupported AI_PROVIDER. Accepted provider: openai-compatible.",
+      `Unsupported AI_PROVIDER. Accepted providers: ${OWN_PROVIDERS.join(", ")}.`,
     );
   }
 
-  if (env.AUTH_MODE !== "local_noauth") {
+  // Hosted OpenSEO meters AI spend through OpenRouter's cost reporting.
+  if (isHostedAuthMode(env.AUTH_MODE)) {
     throw new Error(
-      "AI_PROVIDER=openai-compatible is only supported when AUTH_MODE=local_noauth.",
+      "AI_PROVIDER is not supported on hosted OpenSEO, which uses OpenRouter.",
     );
+  }
+
+  if (provider === "anthropic") {
+    return {
+      provider,
+      apiKey: getRequiredConfigurationValue(env, "ANTHROPIC_API_KEY"),
+      modelId: env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL,
+    };
+  }
+
+  if (provider === "openai") {
+    return {
+      provider,
+      apiKey: getRequiredConfigurationValue(env, "OPENAI_API_KEY"),
+      baseUrl: OPENAI_BASE_URL,
+      modelId: getRequiredConfigurationValue(env, "OPENAI_MODEL"),
+    };
   }
 
   return {
-    provider: "openai-compatible",
+    provider,
     apiKey: getRequiredConfigurationValue(env, "AI_API_KEY"),
     baseUrl: getRequiredConfigurationValue(env, "AI_BASE_URL"),
     modelId: getRequiredConfigurationValue(env, "AI_MODEL"),
   };
+}
+
+function isOwnProvider(value: string): value is (typeof OWN_PROVIDERS)[number] {
+  return (OWN_PROVIDERS as readonly string[]).includes(value);
 }
 
 export function getChatAgentSetupStatus(
@@ -129,12 +180,13 @@ export function getChatAgentSetupStatus(
       errorMessage: null,
     };
   } catch (error) {
+    const provider = env.AI_PROVIDER;
     return {
       enabled: false,
-      provider: !env.AI_PROVIDER
+      provider: !provider
         ? "openrouter"
-        : env.AI_PROVIDER === "openai-compatible"
-          ? "openai-compatible"
+        : isOwnProvider(provider)
+          ? provider
           : null,
       errorMessage:
         error instanceof Error
@@ -145,27 +197,27 @@ export function getChatAgentSetupStatus(
 }
 
 /**
- * SAM's model: an OpenAI-compatible endpoint when AI_PROVIDER is set (fork),
- * otherwise upstream's OpenRouter path (own key or Every App gateway).
+ * SAM's model: the provider named by AI_PROVIDER (fork), otherwise upstream's
+ * OpenRouter path (own key or Every App gateway).
  */
 export function getChatAgentModelSync(
   env: object,
   reasoningEffort: "max" | "low" = "max",
 ): LanguageModelV3 {
-  const aiProvider = getEnvValueSync(env, "AI_PROVIDER");
-  if (!aiProvider) return buildSamChatModel(env, reasoningEffort);
-  const configuration = resolveChatAgentConfiguration({
-    AUTH_MODE: getEnvValueSync(env, "AUTH_MODE"),
-    AI_PROVIDER: aiProvider,
-    AI_API_KEY: getEnvValueSync(env, "AI_API_KEY"),
-    AI_BASE_URL: getEnvValueSync(env, "AI_BASE_URL"),
-    AI_MODEL: getEnvValueSync(env, "AI_MODEL"),
-  });
-  if (configuration.provider !== "openai-compatible") {
+  if (!getEnvValueSync(env, "AI_PROVIDER")) {
+    return buildSamChatModel(env, reasoningEffort);
+  }
+  const configuration = resolveChatAgentConfiguration(readChatAgentEnv(env));
+  if (configuration.provider === "openrouter") {
     throw new Error("Unreachable: AI_PROVIDER resolved to OpenRouter.");
   }
+  if (configuration.provider === "anthropic") {
+    return createAnthropic({ apiKey: configuration.apiKey })(
+      configuration.modelId,
+    );
+  }
   return createOpenAICompatible({
-    name: "openai-compatible",
+    name: configuration.provider,
     apiKey: configuration.apiKey,
     baseURL: configuration.baseUrl,
     // Without this the JSON schema is never sent, so research and prompt
@@ -177,7 +229,7 @@ export function getChatAgentModelSync(
 /**
  * A one-off server-side model call (website research, prompt research and
  * suggestions): the same provider SAM uses, plus how to read each step's USD
- * cost. Compatible providers run only in local_noauth, which bills nothing.
+ * cost. AI_PROVIDER is refused on hosted OpenSEO, so nothing it runs is billed.
  */
 export type ServerChatAgent = {
   model: LanguageModelV3;

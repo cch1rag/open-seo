@@ -14,7 +14,7 @@ export function SamSetupGate({
   errorMessage: string | null;
   isRefetching: boolean;
   onRetry: () => void;
-  provider: "openrouter" | "openai-compatible" | null;
+  provider: string | null;
 }) {
   const isOpenRouter = provider === "openrouter";
   return (
@@ -27,8 +27,8 @@ export function SamSetupGate({
           {!isOpenRouter ? (
             <p>
               SAM, OpenSEO&apos;s in-app AI agent, needs a valid AI provider
-              configuration. Set the missing <code>AI_*</code> values in your{" "}
-              <code>.env</code>, restart OpenSEO, then confirm here.
+              configuration. Set the value named below in your environment,
+              restart or redeploy OpenSEO, then confirm here.
             </p>
           ) : isEveryAppClientAuthMode() ? (
             <p>

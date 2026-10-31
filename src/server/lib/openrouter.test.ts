@@ -118,7 +118,7 @@ describe("resolveChatAgentConfiguration", () => {
     ).toThrow("openai-compatible");
   });
 
-  it("restricts compatible providers to local_noauth mode", () => {
+  it("refuses own providers on hosted OpenSEO", () => {
     expect(() =>
       resolveChatAgentConfiguration({
         AUTH_MODE: "hosted",
@@ -127,7 +127,80 @@ describe("resolveChatAgentConfiguration", () => {
         AI_BASE_URL: "https://example.test/openai/v1",
         AI_MODEL: "deployment-name",
       }),
-    ).toThrow("local_noauth");
+    ).toThrow("hosted");
+  });
+
+  it("allows own providers on a Cloudflare Access self-host", () => {
+    expect(
+      resolveChatAgentConfiguration({
+        AUTH_MODE: "cloudflare_access",
+        AI_PROVIDER: "anthropic",
+        ANTHROPIC_API_KEY: "anthropic-key",
+      }),
+    ).toEqual({
+      provider: "anthropic",
+      apiKey: "anthropic-key",
+      modelId: "claude-opus-5-5",
+    });
+  });
+
+  it("uses ANTHROPIC_MODEL when set", () => {
+    expect(
+      resolveChatAgentConfiguration({
+        AI_PROVIDER: "anthropic",
+        ANTHROPIC_API_KEY: "anthropic-key",
+        ANTHROPIC_MODEL: "claude-sonnet-5-5",
+      }),
+    ).toMatchObject({ modelId: "claude-sonnet-5-5" });
+  });
+
+  it("requires ANTHROPIC_API_KEY for anthropic", () => {
+    expect(() =>
+      resolveChatAgentConfiguration({ AI_PROVIDER: "anthropic" }),
+    ).toThrow("ANTHROPIC_API_KEY");
+  });
+
+  it("points openai at the OpenAI API and needs its key and model", () => {
+    expect(
+      resolveChatAgentConfiguration({
+        AI_PROVIDER: "openai",
+        OPENAI_API_KEY: "openai-key",
+        OPENAI_MODEL: "model-name",
+      }),
+    ).toEqual({
+      provider: "openai",
+      apiKey: "openai-key",
+      baseUrl: "https://api.openai.com/v1",
+      modelId: "model-name",
+    });
+    expect(() =>
+      resolveChatAgentConfiguration({
+        AI_PROVIDER: "openai",
+        OPENAI_API_KEY: "openai-key",
+      }),
+    ).toThrow("OPENAI_MODEL");
+  });
+
+  it("builds each own provider's model", () => {
+    expect(
+      getChatAgentModelSync({
+        AI_PROVIDER: "anthropic",
+        ANTHROPIC_API_KEY: "anthropic-key",
+      }),
+    ).toMatchObject({
+      provider: "anthropic.messages",
+      modelId: "claude-opus-5-5",
+    });
+    expect(
+      getChatAgentModelSync({
+        AI_PROVIDER: "openai",
+        OPENAI_API_KEY: "openai-key",
+        OPENAI_MODEL: "model-name",
+      }),
+    ).toMatchObject({
+      provider: "openai.chat",
+      supportsStructuredOutputs: true,
+    });
   });
 
   it("requires an OpenRouter API key for the default provider", () => {

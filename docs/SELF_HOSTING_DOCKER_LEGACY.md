@@ -62,10 +62,15 @@ AI_MODEL=gpt-4.1-mini
 ```
 
 For Azure AI Foundry, use the resource or project OpenAI-v1 endpoint ending in
-`/openai/v1`, and set `AI_MODEL` to the deployment name. Compatible mode must
-run with `AUTH_MODE=local_noauth` through Docker self-hosting only; alternate
-providers are not supported for hosted OpenSEO deployments. The configured
-model must support streaming chat and tool/function calling for SAM.
+`/openai/v1`, and set `AI_MODEL` to the deployment name.
+
+`AI_PROVIDER` also accepts `anthropic` (with `ANTHROPIC_API_KEY`, and
+`ANTHROPIC_MODEL`, default `claude-opus-5-5`) and `openai` (with
+`OPENAI_API_KEY` and `OPENAI_MODEL`). Keys for several providers can sit side
+by side; `AI_PROVIDER` picks the active one. The same values work for the
+Cloudflare self-host in `.env.selfhost`. Hosted OpenSEO always uses OpenRouter.
+The configured model must support streaming chat, tool calling and structured
+JSON output.
 
 ## Telemetry
 
