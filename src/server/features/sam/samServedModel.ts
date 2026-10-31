@@ -5,7 +5,7 @@ import type { UIMessage } from "ai";
  * metadata, shown under the reply. For a routed model (an omniroute combo or
  * OpenRouter) this is the provider model, not the configured id.
  */
-export function withServedModel(
+function withServedModel(
   message: UIMessage,
   model: string | null,
 ): UIMessage | null {
@@ -20,6 +20,7 @@ export function withServedModel(
 /**
  * Saves the served model on the turn's reply. The upsert also re-sends the
  * message to open chats. Refusals are answered by a static model, so skipped.
+ * Best-effort: a failed save must not stop the rest of the response hook.
  */
 export async function recordServedModel(
   agent: {
@@ -34,5 +35,10 @@ export async function recordServedModel(
   const served = turn?.refusal
     ? null
     : withServedModel(message, turn?.model ?? null);
-  if (served) await agent.addMessages([served], { mode: "upsert" });
+  if (!served) return;
+  await agent
+    .addMessages([served], { mode: "upsert" })
+    .catch((error: unknown) => {
+      console.error("[sam] served model not saved", error);
+    });
 }

@@ -4,8 +4,15 @@ import { z } from "zod";
 import {
   getChatAgentModelSync,
   getChatAgentSetupStatus,
+  requireServerChatAgent,
   resolveChatAgentConfiguration,
 } from "./openrouter";
+
+const workersEnv = vi.hoisted(() => ({ value: {} as Record<string, string> }));
+vi.mock("@/server/lib/runtime-env", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getWorkersEnv: async () => workersEnv.value,
+}));
 
 const completion = () =>
   Response.json({
@@ -312,11 +319,7 @@ describe("getChatAgentSetupStatus", () => {
 
 describe("requireServerChatAgent", () => {
   async function agentFor(env: Record<string, string>) {
-    vi.doMock("@/server/lib/runtime-env", async (importOriginal) => ({
-      ...(await importOriginal<object>()),
-      getWorkersEnv: async () => env,
-    }));
-    const { requireServerChatAgent } = await import("./openrouter");
+    workersEnv.value = env;
     return requireServerChatAgent("low");
   }
 
