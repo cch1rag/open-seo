@@ -32,7 +32,9 @@ upstream wholesale.
    `local_noauth`). Upstream calls `buildChatAgentModel(await
 requireOpenRouterAccess(), …)` and `requireOpenRouterCostUsd` directly; any new
    upstream caller of that pair must be switched over at sync time, along with
-   its test's `@/server/lib/openrouter` mock.
+   its test's `@/server/lib/openrouter` mock. Since v0.1.24 upstream's
+   `requireOpenRouterCostUsd` is async (it returns 0 off hosted instead of
+   throwing), so `stepCostUsd` may return a promise and every caller awaits it.
 
 ## Standing conflict resolutions
 
