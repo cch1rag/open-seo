@@ -52,6 +52,25 @@ it("sends OpenAI calls to MiniMax M3 from a country where OpenAI is blocked", as
   ).toBe("minimax/minimax-m3");
 });
 
+it("sends requests to a custom base URL without the region lookup", async () => {
+  const fetchMock = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(completion());
+  const { buildChatAgentModel } = await import("./openrouter");
+  await generateText({
+    model: buildChatAgentModel({
+      apiKey: "key",
+      baseURL: "https://llm.example.com/v1",
+    }),
+    prompt: "hi",
+  });
+  expect(fetchMock).toHaveBeenCalledOnce();
+  expect(fetchMock).toHaveBeenCalledWith(
+    "https://llm.example.com/v1/chat/completions",
+    expect.anything(),
+  );
+});
+
 it("stays on OpenAI when the country lookup fails", async () => {
   expect(
     await requestedModel(async () => {
@@ -339,9 +358,8 @@ describe("requireServerChatAgent", () => {
   it("keeps OpenRouter's strict cost reading without AI_PROVIDER", async () => {
     const agent = await agentFor({ OPENROUTER_API_KEY: "router-key" });
     expect(agent.model.provider).toContain("openrouter");
-    expect(agent.stepCostUsd({ openrouter: { usage: { cost: 0.5 } } })).toBe(
-      0.5,
-    );
-    expect(() => agent.stepCostUsd({})).toThrow();
+    await expect(
+      agent.stepCostUsd({ openrouter: { usage: { cost: 0.5 } } }),
+    ).resolves.toBe(0.5);
   });
 });

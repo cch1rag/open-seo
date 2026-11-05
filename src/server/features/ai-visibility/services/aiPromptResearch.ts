@@ -264,7 +264,7 @@ async function relevantQuestions(
     prompt,
     // Admitted above, so settle the actual cost even if credits ran out since.
     onStepFinish: async (step) => {
-      const costUsd = input.chatAgent.stepCostUsd(step.providerMetadata);
+      const costUsd = await input.chatAgent.stepCostUsd(step.providerMetadata);
       await billResearchSpend({ ...customer, projectId: input.projectId }, [
         {
           provider: "openrouter",
