@@ -18,7 +18,7 @@ import { getEnvValueSync, getWorkersEnv } from "@/server/lib/runtime-env";
  * holds the key. The proxy's host is a placeholder the binding never
  * resolves.
  */
-export type OpenRouterAccess =
+type OpenRouterAccess =
   | { apiKey: string; baseURL?: string }
   | { gatewayFetch: typeof fetch };
 
