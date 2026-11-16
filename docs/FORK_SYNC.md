@@ -104,9 +104,6 @@ pnpm ci:check && pnpm test:ci
   upstream repository rather than the fork.
 - **Don't `git add -A` during a merge** without checking for untracked local
   tool state (`.serena/`, `.worktrees/`).
-- **Unset `ANTHROPIC_BASE_URL` before `pnpm test:ci`.** The Anthropic SDK
-  reads it, and `openrouter.test.ts` asserts the default
-  `https://api.anthropic.com/v1/messages` URL.
 - The merge output is dense; read conflicted regions with a plain file read.
   Token-compressing wrappers mangle conflict markers, and they truncate check
   output — a `prettier --check` that prints only `Checking formatting...` is a

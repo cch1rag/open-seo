@@ -1,7 +1,8 @@
 # Fork ledger
 
-Append-only, newest first. One entry per sync, fix, deploy or cleanup. Link
-PRs and commits; keep secrets and `.env` values out.
+New entries go at the top; past entries are not edited. One entry per sync,
+fix, deploy or cleanup. Link PRs and commits; keep secrets and `.env` values
+out.
 
 ## 2026-11-16
 

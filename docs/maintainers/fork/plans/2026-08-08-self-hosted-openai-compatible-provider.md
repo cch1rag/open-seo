@@ -166,8 +166,6 @@ git add package.json pnpm-lock.yaml src/server/lib/openrouter.ts src/server/lib/
 git commit -m "feat: support compatible self-hosted AI providers"
 ```
 
-Do not push.
-
 ### Task 2: Route both chat agents through the provider boundary and type the runtime environment
 
 **Files:**
@@ -250,8 +248,6 @@ Expected: exit code 0 for both commands.
 git add src/server/features/sam/SamChatAgent.ts src/env.d.ts src/server/lib/openrouter.test.ts
 git commit -m "feat: route SAM through shared AI provider selection"
 ```
-
-Do not push.
 
 ### Task 3: Make self-host validation and SAM setup messaging provider-aware
 
@@ -359,8 +355,6 @@ git add src/server/lib/openrouter.ts src/server/lib/openrouter.test.ts src/lib/s
 git commit -m "feat: validate self-hosted AI provider setup"
 ```
 
-Do not push.
-
 ### Task 4: Document the Docker-only configuration paths
 
 **Files:**
@@ -454,5 +448,3 @@ evidence rather than weakening tests.
 git add .env.example compose.yaml docs/SELF_HOSTING_DOCKER.md
 git commit -m "docs: explain compatible Docker AI providers"
 ```
-
-Do not push.
