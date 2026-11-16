@@ -1,6 +1,6 @@
 # Self-Hosted OpenAI-Compatible Provider Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Status:** Shipped 2026-08-08 (fork PR #1). Kept as a design record; steps use checkbox (`- [ ]`) syntax.
 
 **Goal:** Let Docker self-hosters use OpenAI, Azure AI Foundry, and other OpenAI-compatible endpoints for SAM and onboarding chat while retaining OpenRouter as the default and as the only hosted provider.
 

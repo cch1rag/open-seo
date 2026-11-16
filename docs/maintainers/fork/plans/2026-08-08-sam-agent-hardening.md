@@ -1,6 +1,6 @@
 # SAM agent hardening implementation plan
 
-> **For implementation:** Use the `executing-plans` skill and execute this plan in `feat/sam-agent-hardening`. Do not start, stop, or restart a server from the main checkout; any isolated browser test must use an explicit port other than 3001.
+> **Status:** Shipped 2026-08-08 (fork PR #2). Kept as a design record.
 
 **Goal:** Bound SAM's work and spending, prevent unreviewed durable writes, make cancellation real where supported, and make external evidence and failures safe to consume.
 

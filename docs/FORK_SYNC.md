@@ -6,6 +6,9 @@ fork-only — upstream has no copy, so it never conflicts during a sync.
 - `origin` → `https://github.com/cch1rag/open-seo.git` (ours; push here)
 - `upstream` → `https://github.com/every-app/open-seo.git` (never push)
 
+The context board, ledger, plans and specs for this fork live in
+[`docs/maintainers/fork/`](./maintainers/fork/README.md).
+
 ## What the fork changes
 
 Five things diverge from upstream. Everything else should be taken from
@@ -53,6 +56,8 @@ them instead of re-deriving.
 | `SamChatAgent.ts` — fields, `beforeTurn`                              | Union both sides. Upstream's telemetry/billing state and the fork's `turnAbortSignal` + `turnToolPolicy` are independent.                                                                                                                                                                                                                                                                                                             |
 | `samChatTools.ts` — `buildSamMcpTools`                                | Signature is the union: `(authContext, project, getAbortSignal?, turnId?)`. Both are used. Positional order matters — upstream call sites pass `turnId` third.                                                                                                                                                                                                                                                                        |
 | `SamConversation.tsx`                                                 | Union. Upstream's `experimental_throttle`/`stop`/`isRecovering`/`connectionError` and the fork's `addToolApprovalResponse` are independent.                                                                                                                                                                                                                                                                                           |
+| `vite-plugin-lean-worker-bundle.ts`                                   | Keep `workers-ai-provider` denied in every build, but `@ai-sdk/(openai\|anthropic)` in its own `requiresCodeSplitting: true` rule: the fork loads them lazily in `openrouter.ts`, and the single-module standalone build cannot split them.                                                                                                                                                                                           |
+| `deploy/alchemy/alchemy.run.ts`                                       | The stack generator sits at oxlint's complexity cap (40). Keep fork logic out of it: env passthrough is `forkAi.forkAiEnv(...)`, the VPC bind is `forkAi.bindAiVpc(...)`, both in `forkAiEnv.ts`.                                                                                                                                                                                                                                     |
 
 ## Procedure
 
@@ -99,6 +104,9 @@ pnpm ci:check && pnpm test:ci
   upstream repository rather than the fork.
 - **Don't `git add -A` during a merge** without checking for untracked local
   tool state (`.serena/`, `.worktrees/`).
+- **Unset `ANTHROPIC_BASE_URL` before `pnpm test:ci`.** The Anthropic SDK
+  reads it, and `openrouter.test.ts` asserts the default
+  `https://api.anthropic.com/v1/messages` URL.
 - The merge output is dense; read conflicted regions with a plain file read.
   Token-compressing wrappers mangle conflict markers, and they truncate check
   output — a `prettier --check` that prints only `Checking formatting...` is a
@@ -114,3 +122,11 @@ pnpm ci:check && pnpm test:ci
 
 That single line proves customization 1 survived the merge. If it reads
 `openrouter` instead, `getModel()` lost the provider abstraction.
+
+## After the merge lands
+
+1. Update the Cloudflare self-host from the main checkout:
+   `git pull --ff-only && pnpm install && pnpm deploy:selfhost --yes`. Merging
+   to `main` deploys nothing in this fork.
+2. Add a ledger entry and refresh the context board in
+   `docs/maintainers/fork/`.
