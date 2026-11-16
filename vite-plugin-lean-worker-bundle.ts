@@ -30,11 +30,19 @@ const EAGER_DENYLIST: Array<{
     expected: "lazy-loaded behind the facade in src/server/billing/autumn.ts",
   },
   {
-    pattern:
-      /node_modules\/(workers-ai-provider|@ai-sdk\/(openai|anthropic))\//,
+    pattern: /node_modules\/workers-ai-provider\//,
     expected:
       "aliased to workers-ai-provider-stub.ts (@cloudflare/think's default " +
       "provider path is dead code — our agents construct OpenRouter models)",
+  },
+  {
+    requiresCodeSplitting: true,
+    // Fork: the self-hosted Anthropic/OpenAI providers are real code paths,
+    // so the standalone single-module build has to include them.
+    pattern: /node_modules\/@ai-sdk\/(openai|anthropic)\//,
+    expected:
+      "lazy-loaded on first use in src/server/lib/openrouter.ts (the fork's " +
+      "own AI provider)",
   },
   {
     pattern: /node_modules\/just-bash\//,
