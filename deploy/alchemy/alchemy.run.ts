@@ -152,11 +152,29 @@ const optionalVar = (name: string) =>
     Config.map((value) => value.trim()),
   );
 
+/**
+ * A self-host's own hostname (seo.example.com), in a zone on this account. The
+ * Worker must list it, or each deploy detaches it. In Cloudflare Access mode
+ * the deploy-created Access application protects it too. Hosted prod serves
+ * its fixed domains instead.
+ */
+const readCustomDomain = (prod: boolean) =>
+  Effect.gen(function* () {
+    if (prod) return "";
+    const domain = yield* optionalVar("CUSTOM_DOMAIN");
+    if (domain && !/^[a-z0-9.-]+$/i.test(domain)) {
+      return yield* Effect.die(
+        new Error("CUSTOM_DOMAIN must be a bare hostname (seo.example.com)."),
+      );
+    }
+    return domain;
+  });
+
 const optionalSecret = (name: string) =>
   Config.redacted(name).pipe(Config.withDefault(Redacted.make("")));
 
 const accessScopeHint =
-  " (if this is a permissions error, re-run `pnpm alchemy login --configure`, answer yes to “Customize OAuth scopes?”, and select access:write alongside the defaults)";
+  " (if this is a permissions error, re-run `pnpm alchemy login deploy/alchemy/alchemy.run.ts --configure`, answer yes to “Customize OAuth scopes?”, and select access:write alongside the defaults)";
 
 /**
  * The account's workers.dev subdomain (`<name>.workers.dev`): the configured
@@ -193,6 +211,7 @@ const resolveSelfHostAccess = (
   stage: string,
   provision: boolean,
   workersSubdomain: string,
+  customDomain: string,
 ) =>
   Effect.gen(function* () {
     let teamDomain = yield* optionalVar("TEAM_DOMAIN");
@@ -218,7 +237,11 @@ const resolveSelfHostAccess = (
         Effect.catch((error) =>
           Effect.die(
             new Error(
-              `Could not read the Zero Trust organization: ${String(error)}${accessScopeHint}`,
+              // A 403 access.api.error.not_enabled means Zero Trust was never
+              // turned on for the account, not a missing login scope.
+              String(error).includes("not_enabled")
+                ? "Zero Trust isn't enabled on this Cloudflare account yet. Open https://one.dash.cloudflare.com once and pick the Free plan (Cloudflare creates the team for you), then redeploy."
+                : `Could not read the Zero Trust organization: ${String(error)}${accessScopeHint}`,
             ),
           ),
         ),
@@ -259,7 +282,9 @@ const resolveSelfHostAccess = (
         policyName: `open-seo ${stage} self-host users`,
         applicationName: `open-seo ${stage}`,
         domain: `${workerName(stage)}.${subdomain}`,
+        extraDomain: customDomain || undefined,
         emails: allowedEmails,
+        managedOAuth: true,
       });
       policyAud = application.aud;
     }
@@ -283,6 +308,9 @@ const dataEnv = {
   GOOGLE_CLIENT_ID: optionalVar("GOOGLE_CLIENT_ID"),
   GOOGLE_CLIENT_SECRET: optionalSecret("GOOGLE_CLIENT_SECRET"),
   GOOGLE_MAPS_API_KEY: optionalSecret("GOOGLE_MAPS_API_KEY"),
+  // Sign in with ChatGPT (hosted only). Unset = no button.
+  OPENAI_SIWC_CLIENT_ID: optionalVar("OPENAI_SIWC_CLIENT_ID"),
+  OPENAI_SIWC_CLIENT_SECRET: optionalSecret("OPENAI_SIWC_CLIENT_SECRET"),
   OPENROUTER_API_KEY: optionalSecret("OPENROUTER_API_KEY"),
   OPENROUTER_BASE_URL: optionalVar("OPENROUTER_BASE_URL"),
   OPENROUTER_MODEL: optionalVar("OPENROUTER_MODEL"),
@@ -291,6 +319,9 @@ const dataEnv = {
   AUTUMN_SECRET_KEY: optionalSecret("AUTUMN_SECRET_KEY"),
   AUTUMN_WEBHOOK_SECRET: optionalSecret("AUTUMN_WEBHOOK_SECRET"),
   DUB_API_KEY: optionalSecret("DUB_API_KEY"),
+  STRIPE_PROJECTS_SIGNING_SECRET: optionalSecret(
+    "STRIPE_PROJECTS_SIGNING_SECRET",
+  ),
   META_PIXEL_ID: optionalVar("META_PIXEL_ID"),
   META_CONVERSIONS_API_TOKEN: optionalSecret("META_CONVERSIONS_API_TOKEN"),
   LOOPS_API_KEY: optionalSecret("LOOPS_API_KEY"),
@@ -315,6 +346,12 @@ const dataEnv = {
   ),
   TURNSTILE_SECRET_KEY: optionalSecret("TURNSTILE_SECRET_KEY"),
   TURNSTILE_SITE_KEY: optionalVar("TURNSTILE_SITE_KEY"),
+  // Trustpilot review invitations (src/server/trustpilot). Unset = inert.
+  TRUSTPILOT_API_KEY: optionalSecret("TRUSTPILOT_API_KEY"),
+  TRUSTPILOT_API_SECRET: optionalSecret("TRUSTPILOT_API_SECRET"),
+  TRUSTPILOT_BUSINESS_UNIT_ID: optionalVar("TRUSTPILOT_BUSINESS_UNIT_ID"),
+  TRUSTPILOT_BUSINESS_USER_ID: optionalVar("TRUSTPILOT_BUSINESS_USER_ID"),
+  TRUSTPILOT_TEMPLATE_ID: optionalVar("TRUSTPILOT_TEMPLATE_ID"),
   // Alchemy reconciles worker vars and secrets on every deploy, so every value
   // must come from the env file / GitHub environment — a dashboard-set one
   // would be wiped.
@@ -350,6 +387,7 @@ export default Alchemy.Stack(
       );
     }
     const workersSubdomain = yield* readWorkersSubdomain({ required: false });
+    const customDomain = yield* readCustomDomain(prod);
 
     // Auth needs an absolute BETTER_AUTH_URL. Prod sets it explicitly;
     // previews always derive it from the deterministic worker name — a wrong
@@ -364,6 +402,8 @@ export default Alchemy.Stack(
           ),
         );
       }
+    } else if (customDomain) {
+      authUrl = `https://${customDomain}`;
     } else if (workersSubdomain) {
       authUrl = `https://${workerName(stage)}.${workersSubdomain}`;
     } else if (authMode === "password") {
@@ -388,6 +428,7 @@ export default Alchemy.Stack(
       stage,
       authMode === "cloudflare_access" && !prod,
       workersSubdomain,
+      customDomain,
     );
 
     // Password accounts need a session secret. The self-host env file sets
@@ -479,7 +520,9 @@ export default Alchemy.Stack(
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),
       // Prod serves the real domains; the zone is inferred from the hostname.
-      domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
+      domain: prod
+        ? ["app.openseo.so", "www.app.openseo.so"]
+        : customDomain || undefined,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by
       // src/server.ts), which `bundle: false` requires. Sibling chunks under
@@ -550,6 +593,14 @@ export default Alchemy.Stack(
           simple: { limit: 20, period: 60 },
         }),
 
+        // Per-organization throttle on saving keywords (see
+        // src/server/features/keywords/services/research/saved-keywords.ts).
+        // One call per 50 keywords: 60 a minute is 3,000 keywords a minute.
+        SAVE_KEYWORDS_RATE_LIMIT: Cloudflare.RateLimit(
+          "SAVE_KEYWORDS_RATE_LIMIT",
+          { namespaceId: 1003, simple: { limit: 60, period: 60 } },
+        ),
+
         // Durable Objects (the chat agents; the audit scratchpad lives
         // privately in the open-seo-audit worker). Alchemy backs new DO
         // classes with SQLite storage; wrangler.jsonc's `migrations` only
@@ -596,8 +647,10 @@ export default Alchemy.Stack(
     if (prod) {
       yield* app.bind("hyperdrive", hyperdriveBinding(hyperdriveId));
     }
-    const aiVpc = yield* optionalVar(forkAi.AI_VPC_SERVICE_ID);
-    if (aiVpc) yield* app.bind("ai-vpc-service", forkAi.vpcBinding(aiVpc));
+    yield* forkAi.bindAiVpc(
+      yield* optionalVar(forkAi.AI_VPC_SERVICE_ID),
+      (binding) => app.bind("ai-vpc-service", binding),
+    );
 
     return { url: app.url.as<string>() };
   }),

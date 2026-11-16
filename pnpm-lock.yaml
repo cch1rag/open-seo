@@ -11,6 +11,9 @@ patchedDependencies:
   '@distilled.cloud/cloudflare@0.28.2':
     hash: a8fbc099fe517a0fd8c7fe2dda6d74f8fbf5fe381e0880f7641586b09f9609ba
     path: patches/@distilled.cloud__cloudflare@0.28.2.patch
+  alchemy@2.0.0-beta.61:
+    hash: 0afadf1f3698b6e611c6e55d676c63dae758c8b7e088c00b3b4c582e55fa579b
+    path: patches/alchemy@2.0.0-beta.61.patch
 
 importers:
 
@@ -38,8 +41,8 @@ importers:
         specifier: ^1.2.3
         version: 1.2.3
       '@every-app/sdk':
-        specifier: 0.3.0-rc.14
-        version: 0.3.0-rc.14(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.2.14)(rollup@4.59.0)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))
+        specifier: 0.3.0
+        version: 0.3.0(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.2.14)(rollup@4.59.0)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))
       '@modelcontextprotocol/client':
         specifier: 2.3.1
         version: 2.3.1
@@ -97,6 +100,9 @@ importers:
       cn:
         specifier: ^0.3.0
         version: 0.3.0
+      country-flag-icons:
+        specifier: ^1.6.20
+        version: 1.6.20
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1)
@@ -229,7 +235,7 @@ importers:
         version: 6.1.2(@rolldown/plugin-babel@0.2.3(@babel/core@7.29.7)(@babel/runtime@7.29.7)(rolldown@1.2.14)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1))
       alchemy:
         specifier: 2.0.0-beta.61
-        version: 2.0.0-beta.61(@effect/platform-node@4.0.0-beta.93(effect@4.0.0-beta.93)(ioredis@5.11.1))(@types/node@22.19.11)(@types/react@19.2.14)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1))(effect@4.0.0-beta.93)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1))(vitest@5.0.4(@opentelemetry/api@1.9.1)(@types/node@22.19.11)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))(workerd@1.20261012.1)(ws@8.21.0)
+        version: 2.0.0-beta.61(patch_hash=0afadf1f3698b6e611c6e55d676c63dae758c8b7e088c00b3b4c582e55fa579b)(@effect/platform-node@4.0.0-beta.93(effect@4.0.0-beta.93)(ioredis@5.11.1))(@types/node@22.19.11)(@types/react@19.2.14)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1))(effect@4.0.0-beta.93)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1))(vitest@5.0.4(@opentelemetry/api@1.9.1)(@types/node@22.19.11)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))(workerd@1.20261012.1)(ws@8.21.0)
       cf:
         specifier: 1.0.0-beta.14
         version: 1.0.0-beta.14(@types/node@22.19.11)
@@ -246,8 +252,8 @@ importers:
         specifier: 4.0.0-beta.93
         version: 4.0.0-beta.93
       everyapp:
-        specifier: 0.3.0-rc.14
-        version: 0.3.0-rc.14(@types/node@22.19.11)
+        specifier: 0.3.0
+        version: 0.3.0(@types/node@22.19.11)
       knip:
         specifier: ^5.88.1
         version: 5.88.1(@types/node@22.19.11)(typescript@5.9.3)
@@ -1711,8 +1717,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@every-app/sdk@0.3.0-rc.14':
-    resolution: {integrity: sha512-k0YKXi3XopWX5QTm/Ejopra4XpBGsz99HVUz8EGsIMGxzEXeJqlTubjXqDwSlYyEDZgIS+99/yT+2nG6HNZ0NQ==}
+  '@every-app/sdk@0.3.0':
+    resolution: {integrity: sha512-TvVkVsBk7+fZXesnjENoxFx+ZlmyINwrrM6xRUxSXt46ZCi5QWylPu5pjWlx2Ufn89RGdVDy+tWbOKJ/w3VjJw==}
     peerDependencies:
       '@tanstack/react-start': ^1.168.61
     peerDependenciesMeta:
@@ -4461,6 +4467,9 @@ packages:
       typescript:
         optional: true
 
+  country-flag-icons@1.6.20:
+    resolution: {integrity: sha512-py8JiEKzjhYw6HPJ0L7SxLgCYim36UPRTZX43/kqGueUCZLSvnrqAiwW8HtQibur7mdkFQUkjOgdK+o/9FBtaw==}
+
   crc-32@1.2.2:
     resolution: {integrity: sha512-ROmzCKrTnOwybPcJApAA6WBWij23HVfGVNKqqrZpuyZOHqK2CwHSvpGuyt/UNNvaIjEd8X5IFGp4Mh+Ie1IHJQ==}
     engines: {node: '>=0.8'}
@@ -4914,8 +4923,8 @@ packages:
     resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
     engines: {node: '>=18.0.0'}
 
-  everyapp@0.3.0-rc.14:
-    resolution: {integrity: sha512-OZPDhXc4K6DsEsF6m0SXNMKC14Qr1YV9karPmOBwk5woOpZrbSAbx2LB2TvmvRRxklGAqOtJAK7LtfhPPDMV5w==}
+  everyapp@0.3.0:
+    resolution: {integrity: sha512-dyfs9+NP1USZZoPkSyQiT17KeG+Y0kk7A2AHHMepPt1mh3lMpAn/VzeTHt8bE7GcBRXNcVR9oBBtJ+iR821Z+w==}
     engines: {node: '>=22.18.0'}
     hasBin: true
 
@@ -8789,7 +8798,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@every-app/sdk@0.3.0-rc.14(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.2.14)(rollup@4.59.0)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))':
+  '@every-app/sdk@0.3.0(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.2.14)(rollup@4.59.0)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))':
     dependencies:
       jose: 6.2.12
     optionalDependencies:
@@ -10714,7 +10723,7 @@ snapshots:
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
-  alchemy@2.0.0-beta.61(@effect/platform-node@4.0.0-beta.93(effect@4.0.0-beta.93)(ioredis@5.11.1))(@types/node@22.19.11)(@types/react@19.2.14)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1))(effect@4.0.0-beta.93)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1))(vitest@5.0.4(@opentelemetry/api@1.9.1)(@types/node@22.19.11)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))(workerd@1.20261012.1)(ws@8.21.0):
+  alchemy@2.0.0-beta.61(patch_hash=0afadf1f3698b6e611c6e55d676c63dae758c8b7e088c00b3b4c582e55fa579b)(@effect/platform-node@4.0.0-beta.93(effect@4.0.0-beta.93)(ioredis@5.11.1))(@types/node@22.19.11)(@types/react@19.2.14)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1))(effect@4.0.0-beta.93)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1))(vitest@5.0.4(@opentelemetry/api@1.9.1)(@types/node@22.19.11)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))(workerd@1.20261012.1)(ws@8.21.0):
     dependencies:
       '@alchemy.run/node-utils': 0.0.5
       '@aws-sdk/credential-providers': 3.1080.0
@@ -11162,6 +11171,8 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
+  country-flag-icons@1.6.20: {}
+
   crc-32@1.2.2: {}
 
   cron-schedule@6.0.0: {}
@@ -11566,7 +11577,7 @@ snapshots:
     dependencies:
       eventsource-parser: 3.0.8
 
-  everyapp@0.3.0-rc.14(@types/node@22.19.11):
+  everyapp@0.3.0(@types/node@22.19.11):
     dependencies:
       '@cloudflare/config': 0.24.1
       '@inquirer/prompts': 8.7.5(@types/node@22.19.11)

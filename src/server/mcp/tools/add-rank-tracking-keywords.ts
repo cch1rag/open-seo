@@ -65,7 +65,7 @@ export const addRankTrackingKeywordsTool = {
   config: {
     title: "Add rank tracking keywords",
     description:
-      "Add keywords to an existing rank tracker. It also fetches search volume, difficulty and CPC for the tracker's keywords, which uses credits like get_keyword_metrics. It does not start a check, but scheduled trackers will spend credits on future recurring public Google searches. For a scheduled tracker, call estimate_rank_tracker_cost with additionalKeywords, show the recurring estimate to the user, and pass the approved per-check estimate as maxEstimatedScheduledCheckCredits. The estimate is the most a check can cost, including retries. Existing and repeated keywords are skipped, and `added` is the number actually inserted.",
+      "Add keywords to an existing rank tracker. It also fetches search volume, difficulty, and CPC for the tracker's keywords, which uses credits like get_keyword_metrics. It starts no check, but a scheduled tracker will spend credits on future recurring public Google searches. For a scheduled tracker, call estimate_rank_tracker_cost with additionalKeywords, show the recurring estimate to the user, and pass the approved per-check estimate as maxEstimatedScheduledCheckCredits. Existing and repeated keywords are skipped. To check positions now, use run_rank_tracker.",
     inputSchema,
     outputSchema: z
       .object({
@@ -108,7 +108,7 @@ export const addRankTrackingKeywordsTool = {
     const metricsNote =
       result.added > 0 ? await fetchKeywordMetrics(args, context.billing) : "";
     return mcpResponse({
-      text: `Added ${result.added} of ${requested} requested keyword${requested === 1 ? "" : "s"} to tracker ${args.trackerId}. No check was started.${metricsNote}${result.scheduledEstimate ? ` Future ${result.scheduledEstimate.scheduleInterval} checks cost at most ${result.scheduledEstimate.costCredits} credits each, including retries (up to ~${result.scheduledEstimate.monthlyCostCredits} credits/month).` : ""}`,
+      text: `Added ${result.added} of ${requested} requested keyword${requested === 1 ? "" : "s"} to tracker ${args.trackerId}. No check was started.${metricsNote}${result.scheduledEstimate ? ` Future ${result.scheduledEstimate.scheduleInterval} checks cost at most ${result.scheduledEstimate.costCredits} credits each, including retries (up to ~${result.scheduledEstimate.monthlyCostCredits} credits/month).` : result.added > 0 ? " This tracker is manual, so positions appear only after a check with run_rank_tracker." : ""}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

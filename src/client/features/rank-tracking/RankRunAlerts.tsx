@@ -1,13 +1,16 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
-import { isOutOfCreditsRunError } from "@/shared/rank-tracking";
+import {
+  isOutOfCreditsRunError,
+  RANK_CHECK_DELAYED_ERROR,
+} from "@/shared/rank-tracking";
 import type { useRankRunPolling } from "./useRankRunPolling";
 
 function ReadWhatChangedLink() {
   return (
     <a
-      href="https://openseo.so/blogs/rank-tracking-changes"
+      href="https://openseo.so/blogs/state-of-rank-tracking-november-2026"
       target="_blank"
       rel="noopener noreferrer"
       className="font-medium underline underline-offset-4"
@@ -17,7 +20,7 @@ function ReadWhatChangedLink() {
   );
 }
 
-/** Warnings about the latest rank check: stale, failed, or incomplete. */
+/** The latest rank check's state: running, delayed, stale, failed, or incomplete. */
 export function RankRunAlerts({
   run,
 }: {
@@ -36,8 +39,58 @@ export function RankRunAlerts({
     );
   }
 
+  if (run.isDelayed) {
+    return (
+      <Alert variant="warning">
+        <Clock />
+        <AlertDescription className="text-foreground">
+          <p>
+            <span className="font-medium">This check is delayed</span> because
+            our search data provider is slow. We'll keep waiting for up to 6
+            hours. You can leave this page.
+          </p>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (run.status === "pending" || run.status === "running") {
+    return (
+      <Alert variant="info">
+        <Clock />
+        <AlertDescription className="text-foreground">
+          <p>
+            <span className="font-medium">This check takes about an hour</span>{" "}
+            because Google's results have been unreliable lately. You can leave
+            this page while it's running. <ReadWhatChangedLink />
+          </p>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   if (run.status === "failed" && isOutOfCreditsRunError(run.errorMessage)) {
     return <InsufficientCreditsError title="Your last rank check didn't run" />;
+  }
+
+  if (
+    run.status === "failed" &&
+    run.errorMessage === RANK_CHECK_DELAYED_ERROR
+  ) {
+    return (
+      <Alert variant="warning">
+        <AlertTriangle />
+        <AlertDescription className="text-foreground">
+          <p>
+            <span className="font-medium">
+              We couldn't finish your last check.
+            </span>{" "}
+            Our search data provider didn't return Google's results within 6
+            hours. Please try again later.
+          </p>
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   if (run.status === "failed") {

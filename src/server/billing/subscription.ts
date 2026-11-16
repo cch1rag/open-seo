@@ -11,6 +11,7 @@ import {
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { autumn, AUTUMN_TRACK_RETRY_OPTIONS } from "@/server/billing/autumn";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { runAfterResponse } from "@/server/lib/background";
 import { sendCreditsExhaustedEvent } from "@/server/email/onboarding-drip";
 import { AppError } from "@/server/lib/errors";
 
@@ -183,14 +184,20 @@ export async function checkUsageCreditsDepleted(
 ): Promise<{
   depleted: boolean;
   monthlyRemaining: number;
+  topupRemaining: number;
   /** Depleted because the monthly auto-reload budget is spent, with top-up
    *  credits still in the balance; the refusal copy says to raise it. */
   budgetReached: boolean;
 }> {
-  const check = await getUsageCreditsRemaining(customer.organizationId);
+  // A brand-new org's first call can be a gated MCP tool, before anything
+  // else has created its Autumn customer (and its free-plan credits); the
+  // balance read would 404 without it.
+  const { id } = await getOrCreateOrganizationCustomer(customer);
+  const check = await getUsageCreditsRemaining(id);
   const notDepleted = {
     depleted: false,
     monthlyRemaining: check.monthlyRemaining,
+    topupRemaining: check.topupRemaining,
     budgetReached: false,
   };
   if (check.monthlyRemaining + check.topupRemaining > 0) return notDepleted;
@@ -199,16 +206,18 @@ export async function checkUsageCreditsDepleted(
   // there is nothing to confirm against the customer object, which shows
   // the credits the budget holds back.
   if (check.topupBudgetReached) {
-    await captureServerEvent({
-      distinctId: customer.userId,
-      event: "usage:credits_gate_refused",
-      organizationId: customer.organizationId,
-      properties: {
-        project_id: customer.projectId,
-        reason: "monthly_budget_reached",
-        monthly_remaining: check.monthlyRemaining,
-      },
-    });
+    await runAfterResponse(
+      captureServerEvent({
+        distinctId: customer.userId,
+        event: "usage:credits_gate_refused",
+        organizationId: customer.organizationId,
+        properties: {
+          project_id: customer.projectId,
+          reason: "monthly_budget_reached",
+          monthly_remaining: check.monthlyRemaining,
+        },
+      }),
+    );
     return { ...notDepleted, depleted: true, budgetReached: true };
   }
 
@@ -236,19 +245,21 @@ export async function checkUsageCreditsDepleted(
         confirmed,
       },
     );
-    return { ...notDepleted, monthlyRemaining: confirmed.monthlyRemaining };
+    return { ...notDepleted, ...confirmed };
   }
 
-  await captureServerEvent({
-    distinctId: customer.userId,
-    event: "usage:credits_gate_refused",
-    organizationId: customer.organizationId,
-    properties: {
-      project_id: customer.projectId,
-      monthly_remaining: confirmed.monthlyRemaining,
-      topup_remaining: confirmed.topupRemaining,
-    },
-  });
+  await runAfterResponse(
+    captureServerEvent({
+      distinctId: customer.userId,
+      event: "usage:credits_gate_refused",
+      organizationId: customer.organizationId,
+      properties: {
+        project_id: customer.projectId,
+        monthly_remaining: confirmed.monthlyRemaining,
+        topup_remaining: confirmed.topupRemaining,
+      },
+    }),
+  );
   await sendCreditsExhaustedEvent(customer);
   return { ...notDepleted, depleted: true };
 }
@@ -342,6 +353,62 @@ export async function holdCredits(args: {
     );
   }
   return { hold, allowed: result.allowed, balance: result.balance };
+}
+
+// A research task or SAM turn holds up to this many credits while it runs, and
+// releases them, unspent, once its work is billed. About a typical SAM turn;
+// research model charges are smaller. Kept small because the task's own
+// DataForSEO calls hold their credits separately, and a larger hold would
+// leave them nothing on a nearly spent balance.
+const TASK_HOLD_CREDITS = 25;
+
+/**
+ * Holds credits for one research task or SAM turn that
+ * `checkUsageCreditsDepleted` admitted, so a burst of them can't all start on
+ * the same balance: the reading that admitted each one is the same until
+ * their spend is billed. The hold is at most the pool's balance, so any
+ * positive balance still admits one task, however small, but Autumn refuses a
+ * hold once the balance is held by others. Returns null when refused.
+ * Release the hold with `releaseTaskCredits` once the work is billed.
+ */
+export async function holdTaskCredits(
+  customer: BillingCustomerContext,
+  balance: { monthlyRemaining: number; topupRemaining: number },
+) {
+  const onMonthly = balance.monthlyRemaining > 0;
+  const { hold, allowed } = await holdCredits({
+    customerId: customer.organizationId,
+    featureId: onMonthly
+      ? AUTUMN_SEO_DATA_BALANCE_FEATURE_ID
+      : AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+    estimatedCredits: Math.min(
+      TASK_HOLD_CREDITS,
+      onMonthly ? balance.monthlyRemaining : balance.topupRemaining,
+    ),
+    callIndexes: [],
+    properties: { projectId: customer.projectId, purpose: "task_admission" },
+    lockPrefix: "task",
+  });
+  return allowed ? hold : null;
+}
+
+/** Releases a `holdTaskCredits` hold. Never throws: an unreleased hold
+ *  expires on its own at the hold TTL. */
+export async function releaseTaskCredits(
+  customer: BillingCustomerContext,
+  hold: UsageCreditHold,
+) {
+  const { landed, error } = await finalizeHold(hold, 0, {
+    projectId: customer.projectId,
+    purpose: "task_admission",
+  });
+  if (!landed) {
+    console.error("[autumn] task hold release failed", {
+      organizationId: customer.organizationId,
+      lockId: hold.lockId,
+      error,
+    });
+  }
 }
 
 /**
@@ -464,22 +531,24 @@ export async function reserveUsageCredits(args: {
   }
 
   if (refusedCalls.length > 0) {
-    await captureServerEvent({
-      distinctId: args.customer.userId,
-      event: "usage:credits_gate_refused",
-      organizationId: args.customer.organizationId,
-      properties: {
-        project_id: args.customer.projectId,
-        reason: budgetReached
-          ? "monthly_budget_reached"
-          : "estimate_exceeds_balance",
-        source: "dataforseo",
-        credit_feature: args.creditFeature,
-        estimated_credits: creditsFor(refusedCalls),
-        monthly_remaining: monthlyRemaining,
-        topup_remaining: topupRemaining,
-      },
-    });
+    await runAfterResponse(
+      captureServerEvent({
+        distinctId: args.customer.userId,
+        event: "usage:credits_gate_refused",
+        organizationId: args.customer.organizationId,
+        properties: {
+          project_id: args.customer.projectId,
+          reason: budgetReached
+            ? "monthly_budget_reached"
+            : "estimate_exceeds_balance",
+          source: "dataforseo",
+          credit_feature: args.creditFeature,
+          estimated_credits: creditsFor(refusedCalls),
+          monthly_remaining: monthlyRemaining,
+          topup_remaining: topupRemaining,
+        },
+      }),
+    );
     // Most users are refused while they still have a few credits left, so
     // this, not the zero-balance gate, is where most of them run out. A
     // spent budget is not that: the credits are there, only held back.
