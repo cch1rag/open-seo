@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- the SAM Durable Object: per-turn gates, credit hold and metering, telemetry, and recovery hooks */
 import { Think } from "@cloudflare/think";
 import type {
   ChatErrorContext,
@@ -45,7 +46,11 @@ import {
 } from "@/server/lib/runtime-env";
 import {
   checkUsageCreditsDepleted,
+  holdTaskCredits,
+  releaseTaskCredits,
   trackUsageCreditSpend,
+  type BillingCustomerContext,
+  type UsageCreditHold,
 } from "@/server/billing/subscription";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { MCP_SCOPE } from "@/lib/oauth-resource";
@@ -148,6 +153,13 @@ export class SamChatAgent extends Think {
     maxPaidCalls: SAM_MAX_PAID_TOOL_CALLS,
   });
   private billing: Promise<void> = Promise.resolve();
+  // Credits held while a hosted turn runs, so turns in several sessions can't
+  // all start on one balance (holdTaskCredits). Released once the turn's
+  // spend is billed.
+  private turnHold: {
+    customer: BillingCustomerContext;
+    hold: UsageCreditHold;
+  } | null = null;
 
   // Turn telemetry: armed in beforeTurn, fed by the step and tool hooks,
   // reported once as `sam:turn` when the turn ends by any route (response,
@@ -277,6 +289,8 @@ export class SamChatAgent extends Think {
       maxCalls: SAM_MAX_TOOL_CALLS,
       maxPaidCalls: SAM_MAX_PAID_TOOL_CALLS,
     });
+    // A turn that ended without a response or error hook left its hold.
+    this.releaseTurnHold();
     const turn = this.telemetry.beginTurn(turnCtx.continuation);
     return withPgClient(async (): Promise<TurnConfig> => {
       const ctx = await this.loadSamContext();
@@ -296,12 +310,13 @@ export class SamChatAgent extends Think {
       const { organizationId } = ctx.project;
       const hosted = await isHostedServerAuthMode();
       if (hosted) {
-        const gate = await checkUsageCreditsDepleted({
+        const customer = {
           userId: ctx.row.userId,
           userEmail: ctx.userEmail,
           organizationId,
           projectId: ctx.project.id,
-        });
+        };
+        const gate = await checkUsageCreditsDepleted(customer);
         if (gate.depleted) {
           turn.refusal = "credits";
           // A spent budget holds credits back; buying more would not help.
@@ -309,6 +324,14 @@ export class SamChatAgent extends Think {
             `${gate.budgetReached ? "You've hit your monthly auto-reload budget. Raise it" : "You're out of credits. Upgrade your plan or buy more credits"} on the Billing page to keep using SAM.`,
           );
         }
+        const hold = await holdTaskCredits(customer, gate);
+        if (!hold) {
+          turn.refusal = "credits";
+          return this.refusalTurn(
+            "Your remaining credits are in use by another chat or research that's still running. Try again when it finishes, or add credits on the Billing page.",
+          );
+        }
+        this.turnHold = { customer, hold };
         this.turnMonthlyRemaining = gate.monthlyRemaining;
       }
 
@@ -496,7 +519,18 @@ export class SamChatAgent extends Think {
   // hook.
   private flushSpend(): void {
     this.recordSpend(0, { flush: true });
+    this.releaseTurnHold();
     this.ctx.waitUntil(this.billing);
+  }
+
+  // After the spend queued so far, so the hold covers the turn until billed.
+  private releaseTurnHold(): void {
+    const held = this.turnHold;
+    if (!held) return;
+    this.turnHold = null;
+    this.billing = this.billing.then(() =>
+      releaseTaskCredits(held.customer, held.hold),
+    );
   }
 
   // Think's chat recovery re-runs an interrupted turn: after a Durable Object

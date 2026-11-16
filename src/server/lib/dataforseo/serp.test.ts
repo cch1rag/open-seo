@@ -11,6 +11,7 @@ import {
   fetchLiveSerp,
   fetchLocalSerpTaskResult,
   fetchRankCheckTaskResult,
+  fetchSerpTaskResult,
   postLocalSerpTasks,
   postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
@@ -99,7 +100,6 @@ describe("rank check task queue", () => {
       locationCode: 2840,
       languageCode: "en",
       depth: 20,
-      targetDomain: "example.com",
     });
 
     expect(
@@ -110,18 +110,13 @@ describe("rank check task queue", () => {
       ),
     ).toEqual(["https://api.dataforseo.com/v3/serp/google/organic/task_post"]);
 
-    // Every posted task asks DataForSEO to stop crawling at the target's
-    // organic listing — that is what cuts the actual crawl cost for ranking
-    // domains without false "not ranking" stops on sitelinks/PAA mentions.
-    const stopCrawl = {
-      stop_crawl_on_match: [
-        { match_value: "example.com", match_type: "with_subdomains" },
-      ],
-      find_targets_in: ["organic"],
-    };
+    // DataForSEO rejects tasks carrying stop_crawl_on_match or its related
+    // parameters from November 23, 2026.
     expect(
-      parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1]),
-    ).toMatchObject([stopCrawl, stopCrawl, stopCrawl]);
+      JSON.stringify(parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1])),
+    ).not.toMatch(
+      /stop_crawl_on_match|target_search_mode|find_targets_in|ignore_targets_in/,
+    );
     expect(result.data).toEqual([
       {
         keyword: "alpha",
@@ -386,5 +381,23 @@ describe("Maps task queue", () => {
       status: "completed",
       items: [],
     });
+  });
+});
+
+describe("fetchSerpTaskResult", () => {
+  it("stops waiting on a poll when its signal fires", async () => {
+    const fetchMock = vi.fn<typeof fetch>(
+      async (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Timed out", "TimeoutError"));
+          });
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      fetchSerpTaskResult("read-1", AbortSignal.timeout(1)),
+    ).rejects.toMatchObject({ code: "UPSTREAM_UNAVAILABLE" });
   });
 });
